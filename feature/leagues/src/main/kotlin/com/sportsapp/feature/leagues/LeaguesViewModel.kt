@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.util.Constants
-import com.sportsapp.domain.teams.result.DomainResult
+import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job

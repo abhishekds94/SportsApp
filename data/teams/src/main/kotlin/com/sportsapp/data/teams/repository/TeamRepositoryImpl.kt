@@ -5,7 +5,7 @@ import com.sportsapp.data.teams.mapper.toDomainList
 import com.sportsapp.data.teams.source.remote.TeamRemoteDataSource
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.repository.TeamsRepository
-import com.sportsapp.domain.teams.result.DomainResult
+import com.sportsapp.core.common.result.DomainResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
