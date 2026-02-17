@@ -1,6 +1,5 @@
 package com.sportsapp.core.network.api
 
-import com.sportsapp.core.network.model.EventsResponse
 import com.sportsapp.core.network.model.TeamsResponse
 import retrofit2.http.GET
 import retrofit2.http.Query

@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sportsapp.core.designsystem.component.TeamBadge
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +52,7 @@ fun TeamResultItem(
                 modifier = Modifier.weight(1f)
             ) {
                 TeamBadge(
-                    badgeUrl = team.badge,
+                    badgeUrl = team.badgeUrl,
                     teamName = team.name,
                     size = 36.dp
                 )
@@ -113,15 +113,9 @@ private fun TeamResultItemPreview() {
                 stadium = null,
                 stadiumLocation = null,
                 stadiumCapacity = null,
-                badge = null,
-                jersey = null,
+                badgeUrl = null,
                 description = null,
-                formedYear = null,
-                website = null,
-                facebook = null,
-                twitter = null,
-                instagram = null,
-                youtube = null
+                formedYear = null
             ),
             onClick = {},
             modifier = Modifier.padding(16.dp)

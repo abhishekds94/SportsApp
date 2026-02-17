@@ -6,12 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.sportsapp.data.teams"
+    namespace = "com.sportsapp.domain.teams"
     compileSdk = Versions.compileSdk
 
     defaultConfig {
         minSdk = Versions.minSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -26,17 +25,12 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(project(":core:network"))
-    implementation(project(":domain:teams"))
 
     implementation(Dependencies.coroutinesCore)
     implementation(Dependencies.coreKtx)
+    implementation(Dependencies.lifecycleRuntimeKtx)
 
     implementation(Dependencies.hiltAndroid)
     ksp(Dependencies.hiltCompiler)
-
-    testImplementation(Dependencies.junit)
-    testImplementation(Dependencies.truth)
-    testImplementation(Dependencies.mockk)
-    testImplementation(Dependencies.coroutinesTest)
+    implementation(Dependencies.hiltNavigationCompose)
 }

@@ -19,12 +19,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sportsapp.core.designsystem.component.TeamBadge
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamListItem(
-    team: Team,
+    teamEntity: Team,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -40,8 +40,8 @@ fun TeamListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TeamBadge(
-                badgeUrl = team.badge,
-                teamName = team.name,
+                badgeUrl = teamEntity.badgeUrl,
+                teamName = teamEntity.name,
                 size = 48.dp
             )
 
@@ -51,13 +51,13 @@ fun TeamListItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = team.name,
+                    text = teamEntity.name,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                team.stadium?.let { stadium ->
+                teamEntity.stadium?.let { stadium ->
                     Text(
                         text = stadium,
                         style = MaterialTheme.typography.bodySmall,
@@ -67,7 +67,7 @@ fun TeamListItem(
                     )
                 }
 
-                team.country?.let { country ->
+                teamEntity.country?.let { country ->
                     Text(
                         text = country,
                         style = MaterialTheme.typography.bodySmall,
@@ -86,7 +86,7 @@ fun TeamListItem(
 private fun TeamListItemPreview() {
     SportsAppTheme {
         TeamListItem(
-            team = Team(
+            teamEntity = Team(
                 id = "1",
                 name = "Arsenal",
                 shortName = "ARS",
@@ -96,8 +96,7 @@ private fun TeamListItemPreview() {
                 stadium = "Emirates Stadium",
                 stadiumLocation = "London",
                 stadiumCapacity = "60704",
-                badge = null,
-                jersey = null,
+                badgeUrl = null,
                 description = "Arsenal Football Club",
                 formedYear = "1886",
                 website = null,
@@ -117,7 +116,7 @@ private fun TeamListItemPreview() {
 private fun TeamListItemLongNamePreview() {
     SportsAppTheme {
         TeamListItem(
-            team = Team(
+            teamEntity = Team(
                 id = "2",
                 name = "Wolverhampton Wanderers",
                 shortName = "Wolves",
@@ -127,8 +126,7 @@ private fun TeamListItemLongNamePreview() {
                 stadium = "Molineux Stadium",
                 stadiumLocation = "Wolverhampton",
                 stadiumCapacity = "32050",
-                badge = null,
-                jersey = null,
+                badgeUrl = null,
                 description = "Wolves FC",
                 formedYear = "1877",
                 website = null,

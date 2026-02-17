@@ -25,6 +25,8 @@ include(":core:designsystem")
 include(":data:teams")
 include(":data:events")
 
+include(":domain:teams")
+
 // Feature modules
 include(":feature:leagues")
 include(":feature:search")

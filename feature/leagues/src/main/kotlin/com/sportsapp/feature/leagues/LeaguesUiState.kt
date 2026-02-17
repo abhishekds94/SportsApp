@@ -1,6 +1,8 @@
 package com.sportsapp.feature.leagues
 
-import com.sportsapp.data.teams.model.Team
+
+import com.sportsapp.domain.teams.model.Team
+import kotlin.collections.isNotEmpty
 
 data class LeaguesUiState(
     val selectedSport: String? = null,

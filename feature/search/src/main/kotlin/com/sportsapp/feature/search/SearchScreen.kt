@@ -1,5 +1,6 @@
 package com.sportsapp.feature.search
 
+import SearchUiState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,7 +27,7 @@ import com.sportsapp.core.designsystem.component.LoadingIndicator
 import com.sportsapp.core.designsystem.component.OfflineZeroState
 import com.sportsapp.core.designsystem.component.SearchIntroZeroState
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.feature.search.components.SearchBar
 import com.sportsapp.feature.search.components.TeamResultItem
 
@@ -97,6 +98,8 @@ private fun SearchContent(
                         )
                     }
                 }
+
+                else -> {}
             }
         }
     }
@@ -114,10 +117,14 @@ private fun SearchResults(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(teams, key = { it.id }) { team ->
-            TeamResultItem(team = team, onClick = { onTeamClick(team.id, team.name) })
+            TeamResultItem(
+                team = team,
+                onClick = { onTeamClick(team.id, team.name) }
+            )
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

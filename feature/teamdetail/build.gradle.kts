@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":data:teams"))
     implementation(project(":data:events"))
+    implementation(project(":domain:teams"))
 
     implementation(Dependencies.coreKtx)
     implementation(Dependencies.lifecycleRuntimeKtx)

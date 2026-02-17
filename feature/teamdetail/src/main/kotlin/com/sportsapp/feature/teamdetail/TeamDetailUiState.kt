@@ -1,14 +1,32 @@
 package com.sportsapp.feature.teamdetail
 
-import com.sportsapp.data.events.model.Event
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 
 data class TeamDetailUiState(
+
     val team: Team? = null,
+
     val isLoadingTeam: Boolean = false,
+
     val isLoadingEvents: Boolean = false,
-    val error: String? = null
+
+    val errorTitle: String? = null,
+
+    val errorMessage: String? = null,
+
+    val errorAction: String? = null
+
 ) {
+
     val isLoading: Boolean
         get() = isLoadingTeam || isLoadingEvents
+
+    val showError: Boolean
+        get() = !isLoading && errorMessage != null
+
+    val showTeam: Boolean
+        get() = !isLoading && team != null
+
+    val showZeroState: Boolean
+        get() = !isLoading && team == null && errorMessage == null
 }

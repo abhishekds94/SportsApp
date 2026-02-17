@@ -1,7 +1,7 @@
 package com.sportsapp.data.teams.di
 
-import com.sportsapp.data.teams.repository.TeamRepository
 import com.sportsapp.data.teams.repository.TeamRepositoryImpl
+import com.sportsapp.domain.teams.repository.TeamsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -14,7 +14,7 @@ abstract class TeamDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindTeamRepository(
+    abstract fun bindTeamsRepository(
         impl: TeamRepositoryImpl
-    ): TeamRepository
+    ): TeamsRepository
 }

@@ -18,11 +18,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sportsapp.core.designsystem.component.TeamBadge
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 
 @Composable
 fun TeamHeader(
-    team: Team,
+    teamEntity: Team,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -34,19 +34,19 @@ fun TeamHeader(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TeamBadge(
-                badgeUrl = team.badge,
-                teamName = team.name,
+                badgeUrl = teamEntity.badgeUrl,
+                teamName = teamEntity.name,
                 size = 80.dp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = team.name,
+                text = teamEntity.name,
                 style = MaterialTheme.typography.headlineMedium
             )
 
-            team.shortName?.let {
+            teamEntity.shortName?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
@@ -60,14 +60,14 @@ fun TeamHeader(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                team.league?.let { league ->
+                teamEntity.league?.let { league ->
                     InfoItem(
                         label = "League",
                         value = league
                     )
                 }
 
-                team.country?.let { country ->
+                teamEntity.country?.let { country ->
                     InfoItem(
                         label = "Country",
                         value = country
@@ -103,7 +103,7 @@ private fun InfoItem(
 private fun TeamHeaderPreview() {
     SportsAppTheme {
         TeamHeader(
-            team = Team(
+            teamEntity = Team(
                 id = "1",
                 name = "Arsenal",
                 shortName = "ARS",
@@ -113,8 +113,7 @@ private fun TeamHeaderPreview() {
                 stadium = "Emirates Stadium",
                 stadiumLocation = "London",
                 stadiumCapacity = "60,704",
-                badge = null,
-                jersey = null,
+                badgeUrl = null,
                 description = "Arsenal Football Club is a professional football club.",
                 formedYear = "1886",
                 website = null,

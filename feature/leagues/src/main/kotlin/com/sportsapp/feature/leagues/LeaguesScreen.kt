@@ -55,7 +55,7 @@ import com.sportsapp.core.common.util.Constants
 import com.sportsapp.core.designsystem.component.ErrorState
 import com.sportsapp.core.designsystem.component.LoadingIndicator
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.feature.leagues.components.LeagueDropdown
 import com.sportsapp.feature.leagues.components.TeamGridItem
 import com.sportsapp.core.designsystem.component.OfflineZeroState
@@ -183,7 +183,8 @@ private fun LeaguesContent(
                         } else {
                             ErrorState(
                                 title = uiState.errorTitle ?: "Failed to load data",
-                                message = uiState.errorMessage ?: "Something went wrong.\nPlease try again.",
+                                message = uiState.errorMessage
+                                    ?: "Something went wrong.\nPlease try again.",
                                 actionText = uiState.errorAction ?: "Retry",
                                 onRetry = {
                                     uiState.selectedLeague?.let { onLeagueSelected(it) }
@@ -401,15 +402,9 @@ private fun LeaguesScreenTeamsPreview() {
                         stadium = "Stadium",
                         stadiumLocation = "City",
                         stadiumCapacity = "50000",
-                        badge = null,
-                        jersey = null,
+                        badgeUrl = null,
                         description = null,
-                        formedYear = null,
-                        website = null,
-                        facebook = null,
-                        twitter = null,
-                        instagram = null,
-                        youtube = null
+                        formedYear = null
                     )
                 },
                 hasMoreTeams = true

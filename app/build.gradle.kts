@@ -39,6 +39,8 @@ dependencies {
     implementation(project(":data:teams"))
     implementation(project(":data:events"))
 
+    implementation(project(":domain:teams"))
+
     implementation(project(":feature:leagues"))
     implementation(project(":feature:search"))
     implementation(project(":feature:teamdetail"))

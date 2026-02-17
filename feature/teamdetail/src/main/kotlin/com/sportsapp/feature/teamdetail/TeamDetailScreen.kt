@@ -50,7 +50,7 @@ import com.sportsapp.core.designsystem.component.ErrorState
 import com.sportsapp.core.designsystem.component.LoadingIndicator
 import com.sportsapp.core.designsystem.component.TeamBadge
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.teams.model.Team
+import com.sportsapp.domain.teams.model.Team
 
 @Composable
 fun TeamDetailScreen(
@@ -103,9 +103,9 @@ private fun TeamDetailContent(
         ) {
             when {
                 uiState.isLoading -> LoadingIndicator()
-                uiState.error != null -> ErrorState(
+                uiState.errorMessage != null -> ErrorState(
                     title = "Failed to load data",
-                    message = uiState.error,
+                    message = uiState.errorMessage,
                     actionText = "Retry",
                     onRetry = { /* call reloadTeam() */ }
                 )
@@ -206,7 +206,7 @@ private fun LogoSquare(team: Team, modifier: Modifier = Modifier) {
     ) {
         Box(contentAlignment = Alignment.Center) {
             TeamBadge(
-                badgeUrl = team.badge,
+                badgeUrl = team.badgeUrl,
                 teamName = team.name,
                 size = 84.dp
             )
@@ -359,15 +359,9 @@ private fun TeamDetailPixelClosePreview() {
                 stadium = "Anfield",
                 stadiumLocation = "Liverpool, Merseyside",
                 stadiumCapacity = "61,276",
-                badge = null,
-                jersey = null,
+                badgeUrl = null,
                 description = "Liverpool Football Club is a professional football club...\r\n\r\nMore text here.",
-                formedYear = "1892",
-                website = null,
-                facebook = null,
-                twitter = null,
-                instagram = null,
-                youtube = null
+                formedYear = "1892"
             ),
         )
     }
