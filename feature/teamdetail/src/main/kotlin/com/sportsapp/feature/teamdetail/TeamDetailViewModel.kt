@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.sportsapp.core.common.error.AppError
 import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.result.DomainResult
+import com.sportsapp.core.common.ui.LoadState
+import com.sportsapp.core.common.ui.toLoadState
+import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -48,49 +51,57 @@ class TeamDetailViewModel @Inject constructor(
                 )
             }
 
-            getTeamByNameUseCase(teamName)
-                .collectLatest { result ->
-                    when (result) {
-                        is DomainResult.Success -> {
-                            val team = result.data
-                            if (team == null) {
-                                val ui = ErrorMapper.toUiMessage(AppError.NotFound)
-                                _uiState.update {
-                                    it.copy(
-                                        team = null,
-                                        isLoadingTeam = false,
-                                        errorTitle = ui.title,
-                                        errorMessage = ui.message,
-                                        errorAction = ui.action
-                                    )
-                                }
-                            } else {
-                                _uiState.update {
-                                    it.copy(
-                                        team = team,
-                                        isLoadingTeam = false,
-                                        errorTitle = null,
-                                        errorMessage = null,
-                                        errorAction = null
-                                    )
-                                }
-                            }
-                        }
+            getTeamByNameUseCase(teamName).collectLatest { result: DomainResult<Team?> ->
 
-                        is DomainResult.Error -> {
-                            val appError = ErrorMapper.toAppError(result.throwable)
-                            val ui = ErrorMapper.toUiMessage(appError)
-                            _uiState.update {
-                                it.copy(
-                                    isLoadingTeam = false,
-                                    errorTitle = ui.title,
-                                    errorMessage = ui.message,
-                                    errorAction = ui.action
-                                )
-                            }
+                val state: LoadState<Team?> = result.toLoadState(
+                    defaultErrorTitle = "Failed to load team",
+                    isEmpty = { it == null },
+                    emptyTitle = "Team not found",
+                    emptyMessage = "Try searching again."
+                )
+
+                when (state) {
+                    LoadState.Idle -> Unit
+                    LoadState.Loading -> Unit
+
+                    is LoadState.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                team = state.data,
+                                isLoadingTeam = false,
+                                errorTitle = null,
+                                errorMessage = null,
+                                errorAction = null
+                            )
+                        }
+                    }
+
+                    is LoadState.Empty -> {
+                        _uiState.update {
+                            it.copy(
+                                team = null,
+                                isLoadingTeam = false,
+                                errorTitle = state.ui.title,
+                                errorMessage = state.ui.message,
+                                errorAction = null
+                            )
+                        }
+                    }
+
+                    is LoadState.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                team = null,
+                                isLoadingTeam = false,
+                                errorTitle = state.ui.title,
+                                errorMessage = state.ui.message,
+                                errorAction = state.ui.action
+                            )
                         }
                     }
                 }
+            }
+
 
         }
     }

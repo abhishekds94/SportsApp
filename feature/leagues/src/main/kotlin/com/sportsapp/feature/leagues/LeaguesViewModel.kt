@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.util.Constants
 import com.sportsapp.core.common.result.DomainResult
+import com.sportsapp.core.common.util.PagingController
+import com.sportsapp.core.common.ui.toLoadState
+import com.sportsapp.core.common.ui.LoadState
+import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -76,23 +80,25 @@ class LeaguesViewModel @Inject constructor(
 
     fun loadMore() {
         val state = _uiState.value
-        if (!state.canLoadMore) return
+        if (state.isLoadingTeams || state.isLoadingMore || !state.hasMoreTeams) return
 
         _uiState.update { it.copy(isLoadingMore = true) }
 
-        val nextCount = (state.displayedTeams.size + pageSize).coerceAtMost(state.allTeams.size)
-        val newDisplayed = state.allTeams.take(nextCount)
-        val hasMore = nextCount < state.allTeams.size
+        val page = paging.loadMore()
 
         _uiState.update {
             it.copy(
-                displayedTeams = newDisplayed,
-                hasMoreTeams = hasMore,
                 isLoadingMore = false,
-                currentPage = it.currentPage + 1
+                displayedTeams = page.shown,
+                hasMoreTeams = page.hasMore
             )
         }
     }
+
+    private val paging = PagingController<Team>(
+        initialSize = initialSize,
+        pageSize = pageSize
+    )
 
     private fun loadTeamsForLeague(leagueName: String) {
         loadJob = viewModelScope.launch {
@@ -113,19 +119,27 @@ class LeaguesViewModel @Inject constructor(
             }
 
             getTeamsByLeagueUseCase(leagueName)
-                .collectLatest { result ->
-                    when (result) {
-                        is DomainResult.Success -> {
-                            val all = result.data
-                            val initial = all.take(initialSize)
+                .collectLatest { result: DomainResult<List<Team>> ->
+                    val state: LoadState<List<Team>> = result.toLoadState(
+                        defaultErrorTitle = "Failed to load teams",
+                        isEmpty = { it.isEmpty() },
+                        emptyTitle = "No teams",
+                        emptyMessage = "No teams found for this league."
+                    )
 
+                    when (state) {
+                        LoadState.Idle -> Unit
+                        LoadState.Loading -> Unit
+
+                        is LoadState.Success -> {
+                            val page = paging.reset(state.data)
                             _uiState.update {
                                 it.copy(
-                                    allTeams = all,
-                                    displayedTeams = initial,
-                                    hasMoreTeams = all.size > initialSize,
                                     isLoadingTeams = false,
                                     isLoadingMore = false,
+                                    allTeams = page.all,
+                                    displayedTeams = page.shown,
+                                    hasMoreTeams = page.hasMore,
                                     currentPage = 0,
                                     errorTitle = null,
                                     errorMessage = null,
@@ -135,23 +149,38 @@ class LeaguesViewModel @Inject constructor(
                             }
                         }
 
-                        is DomainResult.Error -> {
-                            val appError = ErrorMapper.toAppError(result.throwable)
-                            val ui = ErrorMapper.toUiMessage(appError)
-
+                        is LoadState.Empty -> {
                             _uiState.update {
                                 it.copy(
                                     isLoadingTeams = false,
                                     isLoadingMore = false,
-                                    errorTitle = ui.title,
-                                    errorMessage = ui.message,
-                                    errorAction = ui.action,
-                                    errorThrowable = result.throwable
+                                    allTeams = emptyList(),
+                                    displayedTeams = emptyList(),
+                                    hasMoreTeams = false,
+                                    currentPage = 0,
+                                    errorTitle = state.ui.title,
+                                    errorMessage = state.ui.message,
+                                    errorAction = null,
+                                    errorThrowable = null
+                                )
+                            }
+                        }
+
+                        is LoadState.Error -> {
+                            _uiState.update {
+                                it.copy(
+                                    isLoadingTeams = false,
+                                    isLoadingMore = false,
+                                    errorTitle = state.ui.title,
+                                    errorMessage = state.ui.message,
+                                    errorAction = state.ui.action,
+                                    errorThrowable = state.throwable
                                 )
                             }
                         }
                     }
                 }
+
         }
     }
 }

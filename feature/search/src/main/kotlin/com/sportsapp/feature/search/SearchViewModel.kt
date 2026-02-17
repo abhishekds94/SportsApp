@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.extensions.isValidSearchQuery
 import com.sportsapp.core.common.result.DomainResult
+import com.sportsapp.core.common.ui.LoadState
+import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.core.common.util.Constants
+import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.SearchTeamsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -67,34 +70,33 @@ class SearchViewModel @Inject constructor(
 
     private fun search(query: String) {
         viewModelScope.launch {
-            searchTeamsUseCase(query)
-                .collectLatest { result ->
-                    when (result) {
-                        is DomainResult.Success -> {
-                            val teams = result.data
-                            _uiState.value = if (teams.isEmpty()) {
-                                SearchUiState.ZeroState(
-                                    title = "No results",
-                                    message = Constants.ErrorMessages.NO_RESULTS
-                                )
-                            } else {
-                                SearchUiState.Success(teams)
-                            }
-                        }
+            searchTeamsUseCase(query).collectLatest { result: DomainResult<List<Team>> ->
+                val state: LoadState<List<Team>> = result.toLoadState(
+                    defaultErrorTitle = "Failed to search",
+                    isEmpty = { it.isEmpty() },
+                    emptyTitle = "No results",
+                    emptyMessage = "Try a different keyword."
+                )
 
-                        is DomainResult.Error -> {
-                            val appError = ErrorMapper.toAppError(result.throwable)
-                            val ui = ErrorMapper.toUiMessage(appError)
-                            _uiState.value = SearchUiState.Error(
-                                title = ui.title,
-                                message = ui.message,
-                                actionText = ui.action,
-                                throwable = result.throwable
-                            )
-                        }
-                    }
+                _uiState.value = when (state) {
+                    LoadState.Idle -> SearchUiState.Idle
+                    LoadState.Loading -> SearchUiState.Loading
+
+                    is LoadState.Success -> SearchUiState.Success(state.data)
+
+                    is LoadState.Empty -> SearchUiState.ZeroState(
+                        title = state.ui.title,
+                        message = state.ui.message
+                    )
+
+                    is LoadState.Error -> SearchUiState.Error(
+                        title = state.ui.title,
+                        message = state.ui.message,
+                        actionText = state.ui.action,
+                        throwable = state.throwable
+                    )
                 }
-
+            }
         }
     }
 }
