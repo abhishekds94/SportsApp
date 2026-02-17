@@ -1,4 +1,4 @@
-package com.sportsapp.data.teams.di
+package com.sportsapp.di
 
 import com.sportsapp.data.teams.repository.TeamRepositoryImpl
 import com.sportsapp.domain.teams.repository.TeamsRepository
@@ -10,8 +10,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class TeamDataModule {
-
+abstract class AppBindingsModule {
     @Binds
     @Singleton
     abstract fun bindTeamsRepository(

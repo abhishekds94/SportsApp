@@ -37,7 +37,6 @@ dependencies {
     implementation(project(":core:network"))
 
     implementation(project(":data:teams"))
-    implementation(project(":data:events"))
 
     implementation(project(":domain:teams"))
 

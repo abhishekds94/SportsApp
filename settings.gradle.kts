@@ -23,7 +23,6 @@ include(":core:designsystem")
 
 // Data modules
 include(":data:teams")
-include(":data:events")
 
 include(":domain:teams")
 
