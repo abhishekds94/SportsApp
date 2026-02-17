@@ -33,9 +33,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideApiKeyInterceptor(): ApiKeyInterceptor {
-        return ApiKeyInterceptor()
-    }
+    fun provideApiKeyInterceptor(): ApiKeyInterceptor = ApiKeyInterceptor()
+
 
     @Provides
     @Singleton
@@ -49,20 +48,24 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
         return HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (com.sportsapp.core.network.BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
     }
+
 
     @Provides
     @Singleton
     fun provideOkHttpClient(
+        apiKeyInterceptor: ApiKeyInterceptor,
         networkConnectionInterceptor: NetworkConnectionInterceptor,
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BASIC
-            })
+            .addInterceptor(apiKeyInterceptor)
             .addInterceptor(networkConnectionInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(Constants.Api.TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -70,6 +73,7 @@ object NetworkModule {
             .writeTimeout(Constants.Api.TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
     }
+
 
     @Provides
     @Singleton

@@ -1,14 +1,11 @@
 package com.sportsapp.feature.search
 
-import SearchUiState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sportsapp.core.common.error.AppError
 import com.sportsapp.core.common.error.ErrorMapper
-import com.sportsapp.core.common.extensions.asResult
 import com.sportsapp.core.common.extensions.isValidSearchQuery
 import com.sportsapp.core.common.util.Constants
-import com.sportsapp.core.common.util.Resource
+import com.sportsapp.domain.teams.result.DomainResult
 import com.sportsapp.domain.teams.usecase.SearchTeamsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -18,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -72,39 +68,33 @@ class SearchViewModel @Inject constructor(
     private fun search(query: String) {
         viewModelScope.launch {
             searchTeamsUseCase(query)
-                .asResult()
-                .collectLatest { res ->
-                    when (res) {
-                        is Resource.Loading -> {
-                            _uiState.value = SearchUiState.Loading
+                .collectLatest { result ->
+                    when (result) {
+                        is DomainResult.Success -> {
+                            val teams = result.data
+                            _uiState.value = if (teams.isEmpty()) {
+                                SearchUiState.ZeroState(
+                                    title = "No results",
+                                    message = Constants.ErrorMessages.NO_RESULTS
+                                )
+                            } else {
+                                SearchUiState.Success(teams)
+                            }
                         }
 
-                        is Resource.Success -> {
-                            val list = res.data
-                            _uiState.value =
-                                if (list.isEmpty()) {
-                                    SearchUiState.ZeroState(
-                                        title = "No results",
-                                        message = Constants.ErrorMessages.NO_RESULTS
-                                    )
-                                } else {
-                                    SearchUiState.Success(list)
-                                }
-                        }
-
-                        is Resource.Error -> {
-                            val appError = res.throwable?.let(ErrorMapper::toAppError) ?: AppError.Unknown
+                        is DomainResult.Error -> {
+                            val appError = ErrorMapper.toAppError(result.throwable)
                             val ui = ErrorMapper.toUiMessage(appError)
-
                             _uiState.value = SearchUiState.Error(
                                 title = ui.title,
                                 message = ui.message,
                                 actionText = ui.action,
-                                throwable = res.throwable
+                                throwable = result.throwable
                             )
                         }
                     }
                 }
+
         }
     }
 }

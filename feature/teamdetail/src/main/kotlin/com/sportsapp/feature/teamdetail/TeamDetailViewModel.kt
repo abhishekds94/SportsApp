@@ -5,8 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sportsapp.core.common.error.AppError
 import com.sportsapp.core.common.error.ErrorMapper
-import com.sportsapp.core.common.extensions.asResult
-import com.sportsapp.core.common.util.Resource
+import com.sportsapp.domain.teams.result.DomainResult
 import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -50,15 +49,10 @@ class TeamDetailViewModel @Inject constructor(
             }
 
             getTeamByNameUseCase(teamName)
-                .asResult()
-                .collectLatest { res ->
-                    when (res) {
-                        is Resource.Loading -> {
-                            _uiState.update { it.copy(isLoadingTeam = true) }
-                        }
-
-                        is Resource.Success -> {
-                            val team = res.data
+                .collectLatest { result ->
+                    when (result) {
+                        is DomainResult.Success -> {
+                            val team = result.data
                             if (team == null) {
                                 val ui = ErrorMapper.toUiMessage(AppError.NotFound)
                                 _uiState.update {
@@ -83,8 +77,8 @@ class TeamDetailViewModel @Inject constructor(
                             }
                         }
 
-                        is Resource.Error -> {
-                            val appError = res.throwable?.let(ErrorMapper::toAppError) ?: AppError.Unknown
+                        is DomainResult.Error -> {
+                            val appError = ErrorMapper.toAppError(result.throwable)
                             val ui = ErrorMapper.toUiMessage(appError)
                             _uiState.update {
                                 it.copy(
@@ -97,6 +91,7 @@ class TeamDetailViewModel @Inject constructor(
                         }
                     }
                 }
+
         }
     }
 }

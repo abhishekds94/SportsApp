@@ -2,7 +2,7 @@ package com.sportsapp.core.common.util
 
 object Constants {
     object Api {
-        const val BASE_URL = "https://www.thesportsdb.com/api/v1/json/3/"
+        const val BASE_URL = "https://www.thesportsdb.com/"
         const val TIMEOUT_SECONDS = 30L
     }
 

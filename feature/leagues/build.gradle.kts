@@ -35,7 +35,6 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:designsystem"))
-    implementation(project(":data:teams"))
     implementation(project(":domain:teams"))
 
     implementation(Dependencies.coreKtx)

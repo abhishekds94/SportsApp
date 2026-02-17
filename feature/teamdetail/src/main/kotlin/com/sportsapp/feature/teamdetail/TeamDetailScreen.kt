@@ -46,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportsapp.core.designsystem.component.ErrorState
 import com.sportsapp.core.designsystem.component.LoadingIndicator
 import com.sportsapp.core.designsystem.component.TeamBadge
@@ -104,10 +105,10 @@ private fun TeamDetailContent(
             when {
                 uiState.isLoading -> LoadingIndicator()
                 uiState.errorMessage != null -> ErrorState(
-                    title = "Failed to load data",
+                    title = uiState.errorTitle ?: "Failed to load data",
                     message = uiState.errorMessage,
-                    actionText = "Retry",
-                    onRetry = { /* call reloadTeam() */ }
+                    actionText = uiState.errorAction ?: "Retry",
+                    onRetry = { onRetry() }
                 )
                 uiState.team != null -> TeamDetailBody(team = uiState.team)
             }

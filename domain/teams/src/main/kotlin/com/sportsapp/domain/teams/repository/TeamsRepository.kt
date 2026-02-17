@@ -1,12 +1,11 @@
-
 package com.sportsapp.domain.teams.repository
 
-import com.sportsapp.core.common.util.Resource
 import com.sportsapp.domain.teams.model.Team
+import com.sportsapp.domain.teams.result.DomainResult
 import kotlinx.coroutines.flow.Flow
 
 interface TeamsRepository {
-    fun searchTeamsByLeague(leagueName: String): Flow<Resource<List<Team>>>
-    fun searchTeams(query: String): Flow<Resource<List<Team>>>
-    fun getTeamByName(teamName: String): Flow<Resource<Team?>>
+    fun searchTeamsByLeague(leagueName: String): Flow<DomainResult<List<Team>>>
+    fun searchTeams(query: String): Flow<DomainResult<List<Team>>>
+    fun getTeamByName(teamName: String): Flow<DomainResult<Team?>>
 }

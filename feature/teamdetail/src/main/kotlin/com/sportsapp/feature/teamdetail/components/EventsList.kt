@@ -20,12 +20,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sportsapp.core.common.util.DateTimeUtils
 import com.sportsapp.core.designsystem.theme.SportsAppTheme
-import com.sportsapp.data.events.model.Event
-import com.sportsapp.data.events.model.EventStatus
+import com.sportsapp.feature.teamdetail.model.EventStatusUi
+import com.sportsapp.feature.teamdetail.model.EventUi
 
 @Composable
 fun EventsList(
-    events: List<Event>,
+    events: List<EventUi>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -40,7 +40,7 @@ fun EventsList(
 
 @Composable
 private fun EventCard(
-    event: Event,
+    event: EventUi,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -63,15 +63,18 @@ private fun EventCard(
                     )
                 }
 
-                if (event.status == EventStatus.FINISHED &&
-                    event.homeScore != null &&
-                    event.awayScore != null) {
+                val hasScore =
+                    event.status == EventStatusUi.FINISHED &&
+                            event.homeScore != null &&
+                            event.awayScore != null
+
+                if (hasScore) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = event.homeScore ?: "",
+                            text = event.homeScore.orEmpty(),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -80,7 +83,7 @@ private fun EventCard(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = event.awayScore ?: "",
+                            text = event.awayScore.orEmpty(),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -119,9 +122,10 @@ private fun EventCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                event.time?.let {
+                val time = event.time
+                if (!time.isNullOrBlank()) {
                     Text(
-                        text = it,
+                        text = time,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -129,7 +133,8 @@ private fun EventCard(
             }
 
             // Venue
-            event.venue?.let { venue ->
+            val venue = event.venue
+            if (!venue.isNullOrBlank()) {
                 Text(
                     text = venue,
                     style = MaterialTheme.typography.bodySmall,
@@ -148,7 +153,7 @@ private fun EventsListPreview() {
     SportsAppTheme {
         EventsList(
             events = listOf(
-                Event(
+                EventUi(
                     id = "1",
                     name = "Arsenal vs Chelsea",
                     league = "Premier League",
@@ -160,10 +165,10 @@ private fun EventsListPreview() {
                     awayScore = "1",
                     date = "2026-02-10",
                     time = "15:00",
-                    status = EventStatus.FINISHED,
+                    status = EventStatusUi.FINISHED,
                     venue = "Emirates Stadium"
                 ),
-                Event(
+                EventUi(
                     id = "2",
                     name = "Liverpool vs Arsenal",
                     league = "Premier League",
@@ -175,7 +180,7 @@ private fun EventsListPreview() {
                     awayScore = null,
                     date = "2026-02-20",
                     time = "17:30",
-                    status = EventStatus.UPCOMING,
+                    status = EventStatusUi.UPCOMING,
                     venue = "Anfield"
                 )
             ),

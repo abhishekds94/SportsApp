@@ -2,11 +2,9 @@ package com.sportsapp.feature.leagues
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sportsapp.core.common.error.AppError
 import com.sportsapp.core.common.error.ErrorMapper
-import com.sportsapp.core.common.extensions.asResult
 import com.sportsapp.core.common.util.Constants
-import com.sportsapp.core.common.util.Resource
+import com.sportsapp.domain.teams.result.DomainResult
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -17,7 +15,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.collections.emptyList
 
 @HiltViewModel
 class LeaguesViewModel @Inject constructor(
@@ -99,17 +96,29 @@ class LeaguesViewModel @Inject constructor(
 
     private fun loadTeamsForLeague(leagueName: String) {
         loadJob = viewModelScope.launch {
-            getTeamsByLeagueUseCase(leagueName)
-                .asResult()
-                .collectLatest { res ->
-                    when (res) {
-                        is Resource.Loading -> {
-                            _uiState.update { it.copy(isLoadingTeams = true) }
-                        }
+            // start loading
+            _uiState.update {
+                it.copy(
+                    isLoadingTeams = true,
+                    isLoadingMore = false,
+                    errorTitle = null,
+                    errorMessage = null,
+                    errorAction = null,
+                    errorThrowable = null,
+                    allTeams = emptyList(),
+                    displayedTeams = emptyList(),
+                    currentPage = 0,
+                    hasMoreTeams = false
+                )
+            }
 
-                        is Resource.Success -> {
-                            val all = res.data
+            getTeamsByLeagueUseCase(leagueName)
+                .collectLatest { result ->
+                    when (result) {
+                        is DomainResult.Success -> {
+                            val all = result.data
                             val initial = all.take(initialSize)
+
                             _uiState.update {
                                 it.copy(
                                     allTeams = all,
@@ -117,21 +126,27 @@ class LeaguesViewModel @Inject constructor(
                                     hasMoreTeams = all.size > initialSize,
                                     isLoadingTeams = false,
                                     isLoadingMore = false,
-                                    currentPage = 0
+                                    currentPage = 0,
+                                    errorTitle = null,
+                                    errorMessage = null,
+                                    errorAction = null,
+                                    errorThrowable = null
                                 )
                             }
                         }
 
-                        is Resource.Error -> {
-                            val appError = res.throwable?.let(ErrorMapper::toAppError) ?: AppError.Unknown
+                        is DomainResult.Error -> {
+                            val appError = ErrorMapper.toAppError(result.throwable)
                             val ui = ErrorMapper.toUiMessage(appError)
+
                             _uiState.update {
                                 it.copy(
                                     isLoadingTeams = false,
                                     isLoadingMore = false,
                                     errorTitle = ui.title,
                                     errorMessage = ui.message,
-                                    errorAction = ui.action
+                                    errorAction = ui.action,
+                                    errorThrowable = result.throwable
                                 )
                             }
                         }

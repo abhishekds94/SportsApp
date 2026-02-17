@@ -1,8 +1,11 @@
+package com.sportsapp.feature.search
+
 import com.sportsapp.domain.teams.model.Team
 
 sealed class SearchUiState {
     data object Idle : SearchUiState()
     data object Loading : SearchUiState()
+
     data class Success(val teams: List<Team>) : SearchUiState()
 
     data class ZeroState(
