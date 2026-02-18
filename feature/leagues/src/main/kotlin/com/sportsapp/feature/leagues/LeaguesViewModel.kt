@@ -2,11 +2,11 @@ package com.sportsapp.feature.leagues
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.result.DomainResult
-import com.sportsapp.core.common.ui.LoadState
-import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.core.common.util.Constants
 import com.sportsapp.core.common.util.PagingController
+import com.sportsapp.domain.leagues.usecase.GetAllLeaguesUseCase
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,165 +21,162 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LeaguesViewModel @Inject constructor(
-    private val getTeamsByLeagueUseCase: GetTeamsByLeagueUseCase
+    private val getTeamsByLeagueUseCase: GetTeamsByLeagueUseCase,
+    private val getAllLeaguesUseCase: GetAllLeaguesUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LeaguesUiState())
+    private val _uiState = MutableStateFlow<LeaguesUiState>(LeaguesUiState.Idle)
     val uiState: StateFlow<LeaguesUiState> = _uiState.asStateFlow()
 
-    private var loadJob: Job? = null
+    private var teamsJob: Job? = null
+    private var leaguesJob: Job? = null
 
-    private val initialSize = 8
-    private val pageSize = 8
+    private val paging = PagingController<Team>(initialSize = 8, pageSize = 8)
 
     fun onSportSelected(sport: String) {
-        if (_uiState.value.selectedSport == sport) {
-            _uiState.update { LeaguesUiState() }
-            loadJob?.cancel()
+        // toggle off behavior: selecting same sport clears
+        val current = _uiState.value
+        if (current is LeaguesUiState.SportSelected && current.sport == sport) {
+            teamsJob?.cancel()
+            leaguesJob?.cancel()
+            _uiState.value = LeaguesUiState.Idle
             return
         }
 
-        val leagues = Constants.Sports.SPORT_LEAGUES[sport] ?: emptyList()
-        _uiState.update {
-            LeaguesUiState(
-                selectedSport = sport,
-                availableLeagues = leagues,
-                selectedLeague = null,
-                allTeams = emptyList(),
-                displayedTeams = emptyList(),
-                isLoadingTeams = false,
-                isLoadingMore = false,
-                hasMoreTeams = false,
-                currentPage = 0,
-                errorTitle = null,
-                errorMessage = null,
-                errorAction = null
+        teamsJob?.cancel()
+        paging.reset(emptyList())
+
+        if (sport == Constants.Sports.SOCCER) {
+            // Soccer: leagues come from API
+            _uiState.value = LeaguesUiState.SportSelected(
+                sport = sport,
+                leagues = LeagueListState.Loading,
+                teams = TeamsState.NotSelected
             )
+            loadSoccerLeagues()
+        } else {
+            // Other sports: keep constants as-is
+            val leagues = Constants.Sports.SPORT_LEAGUES[sport].orEmpty()
+            _uiState.value = LeaguesUiState.SportSelected(
+                sport = sport,
+                leagues = LeagueListState.Ready(leagues),
+                teams = TeamsState.NotSelected
+            )
+        }
+    }
+
+    private fun loadSoccerLeagues() {
+        leaguesJob?.cancel()
+        leaguesJob = viewModelScope.launch {
+            getAllLeaguesUseCase().collectLatest { result ->
+                when (result) {
+                    is DomainResult.Success -> {
+                        // API returns all sports; filter to Soccer only
+                        val soccerLeagueNames = result.data
+                            .asSequence()
+                            .filter { it.sport.equals(Constants.Sports.SOCCER, ignoreCase = true) }
+                            .map { it.name }
+                            .distinct()
+                            .sorted()
+                            .toList()
+
+                        _uiState.update { state ->
+                            val s = state as? LeaguesUiState.SportSelected ?: return@update state
+                            s.copy(leagues = LeagueListState.Ready(soccerLeagueNames))
+                        }
+                    }
+
+                    is DomainResult.Error -> {
+                        val ui = ErrorMapper.toUiMessage(ErrorMapper.toAppError(result.throwable))
+                        _uiState.update { state ->
+                            val s = state as? LeaguesUiState.SportSelected ?: return@update state
+                            s.copy(leagues = LeagueListState.Error(ui.title, ui.message, ui.action))
+                        }
+                    }
+                }
+            }
         }
     }
 
     fun onLeagueSelected(leagueName: String) {
-        loadJob?.cancel()
-        _uiState.update {
-            it.copy(
-                selectedLeague = leagueName,
-                allTeams = emptyList(),
-                displayedTeams = emptyList(),
-                currentPage = 0,
-                hasMoreTeams = false,
-                isLoadingTeams = true,
-                isLoadingMore = false,
-                errorTitle = null,
-                errorMessage = null,
-                errorAction = null
-            )
-        }
+        val state = _uiState.value as? LeaguesUiState.SportSelected ?: return
+
+        teamsJob?.cancel()
+        paging.reset(emptyList())
+
+        _uiState.value = state.copy(
+            teams = TeamsState.Loading
+        )
+
         loadTeamsForLeague(leagueName)
     }
 
     fun loadMore() {
-        val state = _uiState.value
-        if (state.isLoadingTeams || state.isLoadingMore || !state.hasMoreTeams) return
-
-        _uiState.update { it.copy(isLoadingMore = true) }
+        val state = _uiState.value as? LeaguesUiState.SportSelected ?: return
+        val teamsState = state.teams as? TeamsState.Content ?: return
+        if (teamsState.isLoadingMore || !teamsState.hasMore) return
 
         val page = paging.loadMore()
 
-        _uiState.update {
-            it.copy(
-                isLoadingMore = false,
-                displayedTeams = page.shown,
-                hasMoreTeams = page.hasMore
+        _uiState.value = state.copy(
+            teams = teamsState.copy(
+                shown = page.shown,
+                hasMore = page.hasMore,
+                isLoadingMore = false
             )
-        }
+        )
     }
 
-    private val paging = PagingController<Team>(
-        initialSize = initialSize,
-        pageSize = pageSize
-    )
-
     private fun loadTeamsForLeague(leagueName: String) {
-        loadJob = viewModelScope.launch {
-            // start loading
-            _uiState.update {
-                it.copy(
-                    isLoadingTeams = true,
-                    isLoadingMore = false,
-                    errorTitle = null,
-                    errorMessage = null,
-                    errorAction = null,
-                    errorThrowable = null,
-                    allTeams = emptyList(),
-                    displayedTeams = emptyList(),
-                    currentPage = 0,
-                    hasMoreTeams = false
-                )
-            }
-
-            getTeamsByLeagueUseCase(leagueName)
-                .collectLatest { result: DomainResult<List<Team>> ->
-                    val state: LoadState<List<Team>> = result.toLoadState(
-                        defaultErrorTitle = "Failed to load teams",
-                        isEmpty = { it.isEmpty() },
-                        emptyTitle = "No teams",
-                        emptyMessage = "No teams found for this league."
-                    )
-
-                    when (state) {
-                        LoadState.Idle -> Unit
-                        LoadState.Loading -> Unit
-
-                        is LoadState.Success -> {
-                            val page = paging.reset(state.data)
-                            _uiState.update {
-                                it.copy(
-                                    isLoadingTeams = false,
-                                    isLoadingMore = false,
-                                    allTeams = page.all,
-                                    displayedTeams = page.shown,
-                                    hasMoreTeams = page.hasMore,
-                                    currentPage = 0,
-                                    errorTitle = null,
-                                    errorMessage = null,
-                                    errorAction = null,
-                                    errorThrowable = null
+        teamsJob = viewModelScope.launch {
+            getTeamsByLeagueUseCase(leagueName).collectLatest { result ->
+                when (result) {
+                    is DomainResult.Success -> {
+                        val teams = result.data
+                        if (teams.isEmpty()) {
+                            _uiState.update { st ->
+                                val s = st as? LeaguesUiState.SportSelected ?: return@update st
+                                s.copy(
+                                    teams = TeamsState.Empty(
+                                        selectedLeague = leagueName,
+                                        title = "No teams",
+                                        message = "No teams found for this league."
+                                    )
                                 )
                             }
-                        }
-
-                        is LoadState.Empty -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoadingTeams = false,
-                                    isLoadingMore = false,
-                                    allTeams = emptyList(),
-                                    displayedTeams = emptyList(),
-                                    hasMoreTeams = false,
-                                    currentPage = 0,
-                                    errorTitle = state.ui.title,
-                                    errorMessage = state.ui.message,
-                                    errorAction = null,
-                                    errorThrowable = null
-                                )
-                            }
-                        }
-
-                        is LoadState.Error -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoadingTeams = false,
-                                    isLoadingMore = false,
-                                    errorTitle = state.ui.title,
-                                    errorMessage = state.ui.message,
-                                    errorAction = state.ui.action,
-                                    errorThrowable = state.throwable
+                        } else {
+                            val page = paging.reset(teams)
+                            _uiState.update { st ->
+                                val s = st as? LeaguesUiState.SportSelected ?: return@update st
+                                s.copy(
+                                    teams = TeamsState.Content(
+                                        selectedLeague = leagueName,
+                                        all = page.all,
+                                        shown = page.shown,
+                                        hasMore = page.hasMore,
+                                        isLoadingMore = false
+                                    )
                                 )
                             }
                         }
                     }
-                }
 
+                    is DomainResult.Error -> {
+                        val ui = ErrorMapper.toUiMessage(ErrorMapper.toAppError(result.throwable))
+                        _uiState.update { st ->
+                            val s = st as? LeaguesUiState.SportSelected ?: return@update st
+                            s.copy(
+                                teams = TeamsState.Error(
+                                    selectedLeague = leagueName,
+                                    title = ui.title,
+                                    message = ui.message,
+                                    action = ui.action
+                                )
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

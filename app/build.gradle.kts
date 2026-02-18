@@ -58,8 +58,10 @@ dependencies {
     implementation(project(":core:network"))
 
     implementation(project(":data:teams"))
+    implementation(project(":data:leagues"))
 
     implementation(project(":domain:teams"))
+    implementation(project(":domain:leagues"))
 
     implementation(project(":feature:leagues"))
     implementation(project(":feature:search"))

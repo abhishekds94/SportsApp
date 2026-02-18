@@ -8,6 +8,9 @@ import com.sportsapp.domain.teams.repository.TeamsRepository
 import com.sportsapp.core.common.result.DomainResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.SerializationException
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 class TeamRepositoryImpl @Inject constructor(
@@ -18,10 +21,15 @@ class TeamRepositoryImpl @Inject constructor(
         try {
             val teams = remoteDataSource.searchTeamsByLeague(leagueName).toDomainList()
             emit(DomainResult.Success(teams))
-        } catch (t: Throwable) {
-            emit(DomainResult.Error(t))
+        } catch (e: IOException) {
+            emit(DomainResult.Error(e))
+        } catch (e: HttpException) {
+            emit(DomainResult.Error(e))
+        } catch (e: SerializationException) {
+            emit(DomainResult.Error(e))
         }
     }
+
 
     override fun searchTeams(query: String): Flow<DomainResult<List<Team>>> = flow {
         try {

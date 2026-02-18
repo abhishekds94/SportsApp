@@ -1,46 +1,36 @@
 package com.sportsapp.feature.leagues
 
-
 import com.sportsapp.domain.teams.model.Team
-import kotlin.collections.isNotEmpty
 
-data class LeaguesUiState(
-    val selectedSport: String? = null,
-    val selectedLeague: String? = null,
-    val availableLeagues: List<String> = emptyList(),
-    val allTeams: List<Team> = emptyList(),
-    val displayedTeams: List<Team> = emptyList(),
-    val currentPage: Int = 0,
-    val hasMoreTeams: Boolean = false,
-    val isLoadingLeagues: Boolean = false,
-    val isLoadingTeams: Boolean = false,
-    val isLoadingMore: Boolean = false,
+sealed interface LeaguesUiState {
 
-    val errorTitle: String? = null,
-    val errorMessage: String? = null,
-    val errorAction: String? = null,
-    val errorThrowable: Throwable? = null
-) {
+    data object Idle : LeaguesUiState
 
-    val hasError: Boolean
-        get() = errorMessage != null
+    data class SportSelected(
+        val sport: String,
+        val leagues: LeagueListState,
+        val teams: TeamsState
+    ) : LeaguesUiState
+}
 
-    val showZeroState: Boolean
-        get() = !isLoadingLeagues &&
-                !isLoadingTeams &&
-                displayedTeams.isEmpty() &&
-                !hasError &&
-                (selectedSport == null || (selectedSport != null && selectedLeague == null))
+sealed interface LeagueListState {
+    data object Hidden : LeagueListState
+    data object Loading : LeagueListState
+    data class Ready(val items: List<String>) : LeagueListState
+    data class Error(val title: String, val message: String, val action: String?) : LeagueListState
+}
 
-    val showLeagueDropdown: Boolean
-        get() = selectedSport != null && availableLeagues.isNotEmpty()
+sealed interface TeamsState {
+    data object NotSelected : TeamsState
+    data object Loading : TeamsState
+    data class Content(
+        val selectedLeague: String,
+        val all: List<Team>,
+        val shown: List<Team>,
+        val hasMore: Boolean,
+        val isLoadingMore: Boolean
+    ) : TeamsState
 
-    val showTeams: Boolean
-        get() = selectedLeague != null && displayedTeams.isNotEmpty() && !isLoadingTeams
-
-    val showEmptyTeams: Boolean
-        get() = selectedLeague != null && allTeams.isEmpty() && !isLoadingTeams && !hasError
-
-    val canLoadMore: Boolean
-        get() = hasMoreTeams && !isLoadingMore && !isLoadingTeams
+    data class Empty(val selectedLeague: String, val title: String, val message: String) : TeamsState
+    data class Error(val selectedLeague: String?, val title: String, val message: String, val action: String?) : TeamsState
 }

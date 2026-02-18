@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sportsapp.data.teams"
+    namespace = "com.sportsapp.data.leagues"
     compileSdk = Versions.compileSdk
 
     defaultConfig {
@@ -20,20 +20,23 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:network"))
-    implementation(project(":domain:teams"))
+    implementation(project(":domain:leagues"))
 
     implementation(Dependencies.coroutinesCore)
     implementation(Dependencies.coreKtx)
-    implementation(Dependencies.kotlinxSerializationJson)
+
+    // Networking
+    implementation(Dependencies.retrofit)
     implementation(Dependencies.retrofitKotlinxSerialization)
+    implementation(Dependencies.okhttp)
+    implementation(Dependencies.okhttpLoggingInterceptor)
+    implementation(Dependencies.kotlinxSerializationJson)
 
     implementation(Dependencies.hiltAndroid)
     ksp(Dependencies.hiltCompiler)

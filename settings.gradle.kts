@@ -23,8 +23,10 @@ include(":core:designsystem")
 
 // Data modules
 include(":data:teams")
+include(":data:leagues")
 
 include(":domain:teams")
+include(":domain:leagues")
 
 // Feature modules
 include(":feature:leagues")
@@ -33,3 +35,4 @@ include(":feature:teamdetail")
 
 // App module
 include(":app")
+include(":data:leagues")

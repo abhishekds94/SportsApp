@@ -48,3 +48,21 @@ data class TeamDto(
     @SerialName("strYoutube")
     val youtube: String? = null
 )
+
+@Serializable
+data class LeaguesResponse(
+    @SerialName("leagues")
+    val leagues: List<LeagueDto>? = null
+)
+
+@Serializable
+data class LeagueDto(
+    @SerialName("idLeague")
+    val id: String? = null,
+    @SerialName("strLeague")
+    val name: String? = null,
+    @SerialName("strSport")
+    val sport: String? = null,
+    @SerialName("strLeagueAlternate")
+    val alternateName: String? = null
+)

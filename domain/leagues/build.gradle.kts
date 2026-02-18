@@ -3,16 +3,14 @@ plugins {
     id(Plugins.kotlinAndroid)
     id(Plugins.hilt)
     id(Plugins.ksp)
-    id(Plugins.kotlinSerialization)
 }
 
 android {
-    namespace = "com.sportsapp.data.teams"
+    namespace = "com.sportsapp.domain.leagues"
     compileSdk = Versions.compileSdk
 
     defaultConfig {
         minSdk = Versions.minSdk
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -27,21 +25,12 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(project(":core:network"))
-    implementation(project(":domain:teams"))
 
     implementation(Dependencies.coroutinesCore)
     implementation(Dependencies.coreKtx)
-    implementation(Dependencies.kotlinxSerializationJson)
-    implementation(Dependencies.retrofitKotlinxSerialization)
+    implementation(Dependencies.lifecycleRuntimeKtx)
 
     implementation(Dependencies.hiltAndroid)
     ksp(Dependencies.hiltCompiler)
-
-    // Testing
-    testImplementation(Dependencies.junit)
-    testImplementation(Dependencies.mockk)
-    testImplementation(Dependencies.coroutinesTest)
-    testImplementation(Dependencies.turbine)
-    testImplementation(Dependencies.kotlinTest)
+    implementation(Dependencies.hiltNavigationCompose)
 }

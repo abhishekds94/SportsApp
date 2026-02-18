@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sportsapp.core.common.util.Constants
@@ -106,32 +107,30 @@ private fun LeaguesContent(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            val selectedSport = (uiState as? LeaguesUiState.SportSelected)?.sport
+
             SportsPillsRow(
                 sports = Constants.Sports.ALL_SPORTS,
-                selectedSport = uiState.selectedSport,
+                selectedSport = selectedSport,
                 onSportSelected = onSportSelected,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            if (uiState.showLeagueDropdown) {
-                LeagueDropdown(
-                    leagues = uiState.availableLeagues,
-                    selectedLeague = uiState.selectedLeague,
-                    onLeagueSelected = onLeagueSelected,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    screenEdgePadding = 16.dp
-                )
-            }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            if (uiState.showTeams) {
+            val teamsCount = (uiState as? LeaguesUiState.SportSelected)
+                ?.teams
+                ?.let { teamsState ->
+                    when (teamsState) {
+                        is TeamsState.Content -> teamsState.shown.size
+                        else -> null
+                    }
+                }
+
+            if (teamsCount != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -151,7 +150,7 @@ private fun LeaguesContent(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "${uiState.displayedTeams.size} TEAMS",
+                            text = "$teamsCount TEAMS",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -162,49 +161,81 @@ private fun LeaguesContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                when {
-                    uiState.showZeroState -> {
-                        if (uiState.selectedSport != null) {
-                            SelectLeagueZeroState()
-                        } else {
-                            SelectSportZeroState()
-                        }
+            Column(modifier = Modifier.fillMaxSize()) {
+
+                when (uiState) {
+                    LeaguesUiState.Idle -> {
+                        SelectSportZeroState()
                     }
 
-                    uiState.isLoadingTeams -> LoadingIndicator()
+                    is LeaguesUiState.SportSelected -> {
+                        val selectedSport = uiState.sport
 
-                    uiState.errorMessage != null -> {
-                        if (uiState.errorMessage == Constants.ErrorMessages.NETWORK_ERROR) {
-                            OfflineZeroState(
-                                onTryAgain = {
-                                    uiState.selectedLeague?.let { onLeagueSelected(it) }
-                                }
+                        when (val leagues = uiState.leagues) {
+                            LeagueListState.Hidden -> Unit
+                            LeagueListState.Loading -> LoadingIndicator()
+
+                            is LeagueListState.Error -> ErrorState(
+                                title = leagues.title,
+                                message = leagues.message,
+                                actionText = leagues.action ?: "Retry",
+                                onRetry = { onSportSelected(selectedSport) }
                             )
-                        } else {
-                            ErrorState(
-                                title = uiState.errorTitle ?: "Failed to load data",
-                                message = uiState.errorMessage
-                                    ?: "Something went wrong.\nPlease try again.",
-                                actionText = uiState.errorAction ?: "Retry",
-                                onRetry = {
-                                    uiState.selectedLeague?.let { onLeagueSelected(it) }
+
+                            is LeagueListState.Ready -> {
+                                if (leagues.items.isNotEmpty()) {
+                                    LeagueDropdown(
+                                        leagues = leagues.items,
+                                        selectedLeague =
+                                            (uiState.teams as? TeamsState.Content)?.selectedLeague
+                                                ?: (uiState.teams as? TeamsState.Empty)?.selectedLeague
+                                                ?: (uiState.teams as? TeamsState.Error)?.selectedLeague,
+                                        onLeagueSelected = onLeagueSelected,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .zIndex(2f), // keep it above list
+                                        screenEdgePadding = 16.dp
+                                    )
                                 }
-                            )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .zIndex(0f)
+                        ) {
+                            when (val teams = uiState.teams) {
+                                TeamsState.NotSelected -> SelectLeagueZeroState()
+                                TeamsState.Loading -> LoadingIndicator()
+
+                                is TeamsState.Error -> ErrorState(
+                                    title = teams.title,
+                                    message = teams.message,
+                                    actionText = teams.action ?: "Retry",
+                                    onRetry = { teams.selectedLeague?.let(onLeagueSelected) }
+                                )
+
+                                is TeamsState.Empty -> EmptyTeamsState()
+
+                                is TeamsState.Content -> TeamsGrid(
+                                    teams = teams.shown,
+                                    hasMore = teams.hasMore,
+                                    isLoadingMore = teams.isLoadingMore,
+                                    onLoadMore = onLoadMore,
+                                    onTeamClick = onTeamClick,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
-
-                    uiState.showTeams -> TeamsGrid(
-                        teams = uiState.displayedTeams,
-                        hasMore = uiState.hasMoreTeams,
-                        isLoadingMore = uiState.isLoadingMore,
-                        onLoadMore = onLoadMore,
-                        onTeamClick = onTeamClick
-                    )
-
-                    uiState.showEmptyTeams -> EmptyTeamsState()
                 }
             }
+
         }
     }
 }
@@ -358,31 +389,39 @@ private fun TeamsGrid(
 @Preview(showBackground = true, name = "Teams Grid")
 @Composable
 private fun LeaguesScreenTeamsPreview() {
+    val league = "Premier League"
+    val teams = List(6) { index ->
+        Team(
+            id = "$index",
+            name = listOf(
+                "Man City", "Liverpool", "Southampton",
+                "Leicester", "Nottm Forest", "Crystal Palace"
+            )[index],
+            shortName = "T$index",
+            sport = "Soccer",
+            league = league,
+            country = "England",
+            stadium = "Stadium",
+            stadiumLocation = "City",
+            stadiumCapacity = "50000",
+            badgeUrl = null,
+            description = null,
+            formedYear = null
+        )
+    }
+
     SportsAppTheme {
         LeaguesContent(
-            uiState = LeaguesUiState(
-                selectedSport = "Soccer",
-                selectedLeague = "Premier League",
-                displayedTeams = List(6) { index ->
-                    Team(
-                        id = "$index",
-                        name = listOf(
-                            "Man City", "Liverpool", "Southampton",
-                            "Leicester", "Nottm Forest", "Crystal Palace"
-                        )[index],
-                        shortName = "T$index",
-                        sport = "Soccer",
-                        league = "Premier League",
-                        country = "England",
-                        stadium = "Stadium",
-                        stadiumLocation = "City",
-                        stadiumCapacity = "50000",
-                        badgeUrl = null,
-                        description = null,
-                        formedYear = null
-                    )
-                },
-                hasMoreTeams = true
+            uiState = LeaguesUiState.SportSelected(
+                sport = Constants.Sports.SOCCER,
+                leagues = LeagueListState.Ready(items = listOf("Premier League", "La Liga")),
+                teams = TeamsState.Content(
+                    selectedLeague = league,
+                    all = teams,
+                    shown = teams,
+                    hasMore = true,
+                    isLoadingMore = false
+                )
             ),
             onSportSelected = {},
             onLeagueSelected = {},
@@ -391,3 +430,4 @@ private fun LeaguesScreenTeamsPreview() {
         )
     }
 }
+

@@ -3,6 +3,8 @@ package com.sportsapp.feature.leagues
 import app.cash.turbine.test
 import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.core.common.util.Constants
+import com.sportsapp.domain.leagues.model.League
+import com.sportsapp.domain.leagues.usecase.GetAllLeaguesUseCase
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import io.mockk.every
@@ -23,23 +25,39 @@ class LeaguesViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getTeamsByLeagueUseCase: GetTeamsByLeagueUseCase = mockk()
+    private val getAllLeagueUseCase: GetAllLeaguesUseCase = mockk()
+
+    private fun stubSoccerLeaguesSuccess() {
+        val leagues = listOf(
+            League(id = "1", name = "Premier League", sport = "Soccer", alternateName = null),
+            League(id = "2", name = "La Liga", sport = "Soccer", alternateName = null),
+            League(id = "3", name = "NBA", sport = "Basketball", alternateName = null)
+        )
+
+        every { getAllLeagueUseCase.invoke() } returns flowOf(DomainResult.Success(leagues))
+    }
+
 
     @Test
-    fun `onSportSelected sets available leagues and clears selected league`() = runTest {
-        val vm = LeaguesViewModel(getTeamsByLeagueUseCase)
+    fun `onSportSelected for non-soccer uses constants leagues`() = runTest {
+        val vm = LeaguesViewModel(getTeamsByLeagueUseCase, getAllLeagueUseCase)
 
-        val sport = Constants.Sports.SPORT_LEAGUES.keys.first()
-        vm.onSportSelected(sport)
+        vm.onSportSelected(Constants.Sports.BASKETBALL)
 
-        val state = vm.uiState.value
-        assertEquals(sport, state.selectedSport)
-        assertTrue(state.availableLeagues.isNotEmpty())
-        assertEquals(null, state.selectedLeague)
+        val state = vm.uiState.value as LeaguesUiState.SportSelected
+        val leagues = state.leagues as LeagueListState.Ready
+
+        assertEquals(Constants.Sports.BASKETBALL, state.sport)
+        assertTrue(leagues.items.isNotEmpty())
     }
+
 
     @Test
     fun `onLeagueSelected loads teams and populates initial page`() = runTest {
-        val vm = LeaguesViewModel(getTeamsByLeagueUseCase)
+        stubSoccerLeaguesSuccess()
+
+        val vm = LeaguesViewModel(getTeamsByLeagueUseCase, getAllLeagueUseCase)
+        vm.onSportSelected(Constants.Sports.SOCCER)
 
         val league = "Premier League"
         val teams = (1..20).map {
@@ -59,25 +77,31 @@ class LeaguesViewModelTest {
         vm.onLeagueSelected(league)
 
         vm.uiState.test {
-            // first emissions include loading
-            var state = awaitItem()
-            while (state.isLoadingTeams) state = awaitItem()
+            while (true) {
+                val state = awaitItem()
+                val selected = state as? LeaguesUiState.SportSelected ?: continue
+                val teamsState = selected.teams
 
-            assertFalse(state.isLoadingTeams)
-            assertEquals(league, state.selectedLeague)
-            assertEquals(teams.size, state.allTeams.size)
-
-            // initial page size is 8
-            assertEquals(8, state.displayedTeams.size)
-            assertTrue(state.hasMoreTeams)
-
-            cancelAndIgnoreRemainingEvents()
+                if (teamsState is TeamsState.Content) {
+                    assertEquals(league, teamsState.selectedLeague)
+                    assertEquals(teams.size, teamsState.all.size)
+                    assertEquals(8, teamsState.shown.size)
+                    assertTrue(teamsState.hasMore)
+                    cancelAndIgnoreRemainingEvents()
+                    return@test
+                }
+            }
         }
     }
+
+
 
     @Test
     fun `loadMore appends next page`() = runTest {
-        val vm = LeaguesViewModel(getTeamsByLeagueUseCase)
+        stubSoccerLeaguesSuccess()
+
+        val vm = LeaguesViewModel(getTeamsByLeagueUseCase, getAllLeagueUseCase)
+        vm.onSportSelected(Constants.Sports.SOCCER)
 
         val league = "Premier League"
         val teams = (1..20).map {
@@ -96,44 +120,84 @@ class LeaguesViewModelTest {
 
         vm.onLeagueSelected(league)
 
-        // wait load finish
         vm.uiState.test {
-            var state = awaitItem()
-            while (state.isLoadingTeams) state = awaitItem()
+            // Wait until content appears
+            while (true) {
+                val state = awaitItem()
+                val selected = state as? LeaguesUiState.SportSelected ?: continue
+                val content = selected.teams as? TeamsState.Content ?: continue
 
-            assertEquals(8, state.displayedTeams.size)
+                assertEquals(8, content.shown.size)
 
-            vm.loadMore()
+                vm.loadMore()
 
-            state = awaitItem()
-            while (state.isLoadingMore) state = awaitItem()
+                // Next emission should show 16
+                while (true) {
+                    val s2 = awaitItem()
+                    val sel2 = s2 as? LeaguesUiState.SportSelected ?: continue
+                    val content2 = sel2.teams as? TeamsState.Content ?: continue
 
-            // after load more, should be 16 shown (8 + 8)
-            assertEquals(16, state.displayedTeams.size)
-            assertTrue(state.hasMoreTeams)
-
-            cancelAndIgnoreRemainingEvents()
+                    if (content2.shown.size == 16) {
+                        assertTrue(content2.hasMore)
+                        cancelAndIgnoreRemainingEvents()
+                        return@test
+                    }
+                }
+            }
         }
     }
 
+
+
     @Test
     fun `league load error sets error state`() = runTest {
-        val vm = LeaguesViewModel(getTeamsByLeagueUseCase)
+        stubSoccerLeaguesSuccess()
+
+        val vm = LeaguesViewModel(getTeamsByLeagueUseCase, getAllLeagueUseCase)
+        vm.onSportSelected(Constants.Sports.SOCCER)
 
         val league = "Premier League"
-        every { getTeamsByLeagueUseCase.invoke(league) } returns flowOf(DomainResult.Error(RuntimeException("fail")))
+        every { getTeamsByLeagueUseCase.invoke(league) } returns flowOf(
+            DomainResult.Error(RuntimeException("fail"))
+        )
 
         vm.onLeagueSelected(league)
 
         vm.uiState.test {
-            var state = awaitItem()
-            while (state.isLoadingTeams) state = awaitItem()
+            while (true) {
+                val state = awaitItem()
+                val selected = state as? LeaguesUiState.SportSelected ?: continue
+                val teamsState = selected.teams
 
-            assertFalse(state.isLoadingTeams)
-            assertTrue(state.errorTitle != null)
-            assertTrue(state.errorMessage != null)
-
-            cancelAndIgnoreRemainingEvents()
+                if (teamsState is TeamsState.Error) {
+                    assertEquals(league, teamsState.selectedLeague)
+                    assertTrue(teamsState.title.isNotBlank())
+                    assertTrue(teamsState.message.isNotBlank())
+                    cancelAndIgnoreRemainingEvents()
+                    return@test
+                }
+            }
         }
     }
+
+    @Test
+    fun `soccer selection loads leagues from api and filters soccer`() = runTest {
+        val leagues = listOf(
+            League(id = "1", name = "Premier League", sport = "Soccer", alternateName = null),
+            League(id = "2", name = "NBA", sport = "Basketball", alternateName = null)
+        )
+        every { getAllLeagueUseCase.invoke() } returns flowOf(DomainResult.Success(leagues))
+
+        val vm = LeaguesViewModel(getTeamsByLeagueUseCase, getAllLeagueUseCase)
+
+        vm.onSportSelected(Constants.Sports.SOCCER)
+
+        val state = vm.uiState.value as LeaguesUiState.SportSelected
+        val ready = state.leagues as LeagueListState.Ready
+
+        assertTrue(ready.items.contains("Premier League"))
+        assertFalse(ready.items.contains("NBA"))
+    }
+
+
 }
