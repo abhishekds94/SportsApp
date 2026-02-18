@@ -14,9 +14,12 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,6 +41,7 @@ class SearchViewModel @Inject constructor(
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
 
+        // Immediate UI feedback
         if (query.isBlank()) {
             _uiState.value = SearchUiState.Idle
             return
@@ -57,45 +61,60 @@ class SearchViewModel @Inject constructor(
     private fun observeSearchQuery() {
         viewModelScope.launch {
             _searchQuery
+                .map { it.trim() }
                 .debounce(300)
                 .distinctUntilChanged()
-                .collectLatest { query ->
-                    if (query.isBlank()) return@collectLatest
-                    if (!query.isValidSearchQuery()) return@collectLatest
-                    search(query)
+                .flatMapLatest { query ->
+                    when {
+                        query.isBlank() -> flowOf(SearchUiState.Idle)
+
+                        !query.isValidSearchQuery() -> flowOf(
+                            SearchUiState.Error(
+                                title = "Invalid search",
+                                message = Constants.ErrorMessages.EMPTY_SEARCH,
+                                actionText = null,
+                                throwable = null
+                            )
+                        )
+
+                        else -> {
+                            // ✅ Single pipeline; previous search is cancelled on new query
+                            searchTeamsUseCase(query)
+                                .map { result: DomainResult<List<Team>> ->
+                                    val state: LoadState<List<Team>> = result.toLoadState(
+                                        defaultErrorTitle = "Failed to search",
+                                        isEmpty = { it.isEmpty() },
+                                        emptyTitle = "No results",
+                                        emptyMessage = "Try a different keyword."
+                                    )
+
+                                    when (state) {
+                                        LoadState.Idle -> SearchUiState.Idle
+                                        LoadState.Loading -> SearchUiState.Loading
+
+                                        is LoadState.Success -> SearchUiState.Success(state.data)
+
+                                        is LoadState.Empty -> SearchUiState.ZeroState(
+                                            title = state.ui.title,
+                                            message = state.ui.message
+                                        )
+
+                                        is LoadState.Error -> SearchUiState.Error(
+                                            title = state.ui.title,
+                                            message = state.ui.message,
+                                            actionText = state.ui.action,
+                                            throwable = state.throwable
+                                        )
+                                    }
+                                }
+                                // Ensure Loading is emitted immediately when a valid query starts searching
+                                .onStart { emit(SearchUiState.Loading) }
+                        }
+                    }
                 }
-        }
-    }
-
-    private fun search(query: String) {
-        viewModelScope.launch {
-            searchTeamsUseCase(query).collectLatest { result: DomainResult<List<Team>> ->
-                val state: LoadState<List<Team>> = result.toLoadState(
-                    defaultErrorTitle = "Failed to search",
-                    isEmpty = { it.isEmpty() },
-                    emptyTitle = "No results",
-                    emptyMessage = "Try a different keyword."
-                )
-
-                _uiState.value = when (state) {
-                    LoadState.Idle -> SearchUiState.Idle
-                    LoadState.Loading -> SearchUiState.Loading
-
-                    is LoadState.Success -> SearchUiState.Success(state.data)
-
-                    is LoadState.Empty -> SearchUiState.ZeroState(
-                        title = state.ui.title,
-                        message = state.ui.message
-                    )
-
-                    is LoadState.Error -> SearchUiState.Error(
-                        title = state.ui.title,
-                        message = state.ui.message,
-                        actionText = state.ui.action,
-                        throwable = state.throwable
-                    )
+                .collect { newState ->
+                    _uiState.value = newState
                 }
-            }
         }
     }
 }

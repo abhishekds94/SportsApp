@@ -2,7 +2,6 @@ package com.sportsapp.feature.search
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,7 +55,7 @@ private fun SearchContent(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-        Column(
+        androidx.compose.foundation.layout.Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -79,12 +78,27 @@ private fun SearchContent(
             )
 
             when (uiState) {
-                is SearchUiState.Idle -> {
+                SearchUiState.Idle -> {
                     SearchIntroZeroState()
                 }
 
-                is SearchUiState.Loading -> LoadingIndicator()
-                is SearchUiState.Success -> SearchResults(uiState.teams, onTeamClick)
+                SearchUiState.Loading -> {
+                    LoadingIndicator()
+                }
+
+                is SearchUiState.Success -> {
+                    SearchResults(uiState.teams, onTeamClick)
+                }
+
+                is SearchUiState.ZeroState -> {
+                    // Use the search intro illustration but your custom title/message
+                    com.sportsapp.core.designsystem.component.IllustratedZeroState(
+                        illustrationRes = com.sportsapp.core.designsystem.R.drawable.zs_search,
+                        title = uiState.title,
+                        subtitle = uiState.message
+                    )
+                }
+
                 is SearchUiState.Error -> {
                     if (uiState.message == Constants.ErrorMessages.NETWORK_ERROR) {
                         OfflineZeroState(onTryAgain = { onSearchQueryChange(searchQuery) })
@@ -97,8 +111,6 @@ private fun SearchContent(
                         )
                     }
                 }
-
-                else -> {}
             }
         }
     }
@@ -123,7 +135,6 @@ private fun SearchResults(
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
