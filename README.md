@@ -139,4 +139,29 @@ The generated designs were used as visual references, and all production code wa
 - Add more UI polish/accessibility checks if time permits
 - Move Hardcoded strings away from the UI into Strings.xml
 
-### Screenshots
+## Screenshots
+### App Working
+<div>
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/1.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/2.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/3.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/4.png" width="180">
+</div>
+
+<div>
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/5.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/6.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/7.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/8.png" width="180">
+</div>
+
+<div>
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/9.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/10.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/11.png" width="180">
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/12.png" width="180">
+</div>
+
+### UI design using Stitch with Google
+
+    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/UI%20design%20using%20AI.png">
