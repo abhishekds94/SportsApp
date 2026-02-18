@@ -4,7 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.domain.teams.model.Team
+import com.sportsapp.domain.teams.usecase.FollowTeamUseCase
 import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
+import com.sportsapp.domain.teams.usecase.ObserveIsTeamFollowedUseCase
+import com.sportsapp.domain.teams.usecase.UnfollowTeamUseCase
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,6 +28,24 @@ class TeamDetailViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val getTeamByNameUseCase: GetTeamByNameUseCase = mockk()
+    private val followTeamUseCase: FollowTeamUseCase = mockk(relaxed = true)
+    private val observeIsTeamFollowedUseCase: ObserveIsTeamFollowedUseCase = mockk()
+    private val unfollowTeamUseCase: UnfollowTeamUseCase = mockk(relaxed = true)
+
+    private fun createVm(
+        teamName: String,
+        followedFlow: Boolean = false
+    ): TeamDetailViewModel {
+        every { observeIsTeamFollowedUseCase.invoke(any()) } returns flowOf(followedFlow)
+
+        return TeamDetailViewModel(
+            getTeamByNameUseCase = getTeamByNameUseCase,
+            followTeamUseCase = followTeamUseCase,
+            observeIsTeamFollowedUseCase = observeIsTeamFollowedUseCase,
+            unfollowTeamUseCase = unfollowTeamUseCase,
+            savedStateHandle = SavedStateHandle(mapOf("teamName" to teamName))
+        )
+    }
 
     @Test
     fun `init loads team successfully`() = runTest {
@@ -40,17 +62,10 @@ class TeamDetailViewModelTest {
 
         every { getTeamByNameUseCase.invoke(teamName) } returns flowOf(DomainResult.Success(team))
 
-        val vm = TeamDetailViewModel(
-            getTeamByNameUseCase = getTeamByNameUseCase,
-            savedStateHandle = SavedStateHandle(mapOf("teamName" to teamName))
-        )
+        val vm = createVm(teamName = teamName, followedFlow = false)
 
         vm.uiState.test {
-            val first = awaitItem()
-            // initial state is default TeamDetailUiState, then loading update happens
-            // depending on dispatcher scheduling, you may see loading first:
-            // We keep it robust by consuming until non-loading.
-            var state = first
+            var state = awaitItem()
             while (state.isLoadingTeam) {
                 state = awaitItem()
             }
@@ -66,13 +81,9 @@ class TeamDetailViewModelTest {
     @Test
     fun `team not found emits empty state`() = runTest {
         val teamName = "DoesNotExist"
-
         every { getTeamByNameUseCase.invoke(teamName) } returns flowOf(DomainResult.Success(null))
 
-        val vm = TeamDetailViewModel(
-            getTeamByNameUseCase = getTeamByNameUseCase,
-            savedStateHandle = SavedStateHandle(mapOf("teamName" to teamName))
-        )
+        val vm = createVm(teamName = teamName)
 
         vm.uiState.test {
             var state = awaitItem()
@@ -93,13 +104,9 @@ class TeamDetailViewModelTest {
     fun `error from use case emits error ui`() = runTest {
         val teamName = "Arsenal"
         val throwable = RuntimeException("Boom")
-
         every { getTeamByNameUseCase.invoke(teamName) } returns flowOf(DomainResult.Error(throwable))
 
-        val vm = TeamDetailViewModel(
-            getTeamByNameUseCase = getTeamByNameUseCase,
-            savedStateHandle = SavedStateHandle(mapOf("teamName" to teamName))
-        )
+        val vm = createVm(teamName = teamName)
 
         vm.uiState.test {
             var state = awaitItem()
@@ -135,21 +142,19 @@ class TeamDetailViewModelTest {
             flowOf(DomainResult.Success(team))
         )
 
-        val vm = TeamDetailViewModel(
-            getTeamByNameUseCase = getTeamByNameUseCase,
-            savedStateHandle = SavedStateHandle(mapOf("teamName" to teamName))
-        )
+        val vm = createVm(teamName = teamName)
 
-        // wait for first load to finish (error)
         vm.uiState.test {
+            // first load (error)
             var state = awaitItem()
             while (state.isLoadingTeam) state = awaitItem()
             assertNull(state.team)
             assertTrue(state.errorMessage != null)
 
+            // retry
             vm.retry()
 
-            // after retry, should eventually be success
+            // second load (success)
             state = awaitItem()
             while (state.isLoadingTeam) state = awaitItem()
             assertEquals("Arsenal", state.team?.name)
