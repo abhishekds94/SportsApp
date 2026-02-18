@@ -1,301 +1,132 @@
-# Sports App - Android Developer Assessment
+# SportsApp (Android Developer Assessment)
 
-A modern Android application for browsing sports leagues and teams, built with Jetpack Compose and Clean Architecture.
+A youth sports league browsing app built with **Jetpack Compose**, **MVVM**, modularized architecture, and **TheSportsDB** API.
 
-## 📱 Features
+## Features
+- Browse leagues
+- Browse teams in a league
+- Team details
+- Search teams
+- Favorites (local persistence)
 
-- **Browse Leagues** - Filter teams by sport and league
-- **Search Teams** - Global search across all teams
-- **Team Details** - View comprehensive team information
-- **Modern UI** - Material 3 design with Jetpack Compose
-- **Offline Support** - Graceful error handling and loading states
+## Tech Stack
+- Kotlin, Coroutines, Flow/StateFlow
+- Jetpack Compose
+- Retrofit + Kotlin Serialization
+- Hilt (DI)
+- Room (favorites persistence)
+- JUnit + kotlinx.coroutines test utilities
 
-## 🏗️ Architecture
+## API
+Base URL: `https://www.thesportsdb.com/api/v1/json/<ApiKey>/`
 
-### MVVM + Clean Architecture
+## To Add API Key,
+- Create `local.properties` file and add this property `SPORTS_DB_API_KEY=<API_KEY_VALUE>`
 
-```
-┌─────────────────────────────────────────┐
-│           Presentation Layer            │
-│  (Jetpack Compose + ViewModels)         │
-└──────────────┬──────────────────────────┘
-               │
-┌──────────────▼──────────────────────────┐
-│            Domain Layer                  │
-│     (Use Cases + Models)                 │
-└──────────────┬──────────────────────────┘
-               │
-┌──────────────▼──────────────────────────┐
-│            Data Layer                    │
-│  (Repositories + Remote Data Sources)    │
-└──────────────────────────────────────────┘
-```
+Used endpoints:
+- `all_leagues.php`
+- `search_all_teams.php?l={league}`
+- `searchteams.php?t={name}` (team details/search)
 
-### Module Structure
+Rate limit (free tier): ~30 req/min
 
-```
-app/                    # Application entry point
-├── MainActivity
-├── Navigation
-└── Dependency Injection
+## Architecture
+The app follows **MVVM** with clear separation across UI, domain, and data.
 
-core/
-├── common/            # Shared utilities & extensions
-├── designsystem/      # UI components & theme
-└── network/          # API client configuration
-
-data/
-├── teams/            # Teams data layer
-└── events/           # Events data layer
-
-feature/
-├── search/           # Search functionality
-└── teamdetail/       # Team details view
-```
-
-### Dependency Graph
-
-```
-app
- ├─> feature:search
- ├─> feature:teamdetail
- ├─> core:designsystem
- └─> core:common
-
-feature:*
- ├─> data:teams
- ├─> data:events
- ├─> core:designsystem
- └─> core:common
-
-data:*
- ├─> core:network
- └─> core:common
-```
-
-## 🛠️ Tech Stack
-
-| Category | Libraries |
-|----------|-----------|
-| **UI** | Jetpack Compose, Material 3 |
-| **Architecture** | MVVM, Clean Architecture, Multi-module |
-| **DI** | Hilt |
-| **Networking** | Retrofit, OkHttp, Kotlinx Serialization |
-| **Async** | Kotlin Coroutines, Flow |
-| **Image Loading** | Coil |
-| **Testing** | JUnit, MockK, Turbine, Truth |
-| **Build** | Gradle (Kotlin DSL), KSP |
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Android Studio:** Hedgehog (2023.1.1) or later
-- **JDK:** 17
-- **Android SDK:** 34
-- **Min SDK:** 24
-
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd SportsApp
-   ```
-
-2. **Open in Android Studio**
-    - File → Open
-    - Select project directory
-    - Wait for Gradle sync
-
-3. **Build the project**
-   ```bash
-   ./gradlew clean build
-   ```
-
-4. **Run on emulator/device**
-   ```bash
-   ./gradlew installDebug
-   ```
-   Or click Run ▶️ in Android Studio
-
-### API Configuration
-
-The app uses **TheSportsDB Free API** with built-in API key ("3").
-No additional configuration required.
-
-**API Base URL:** `https://www.thesportsdb.com/api/v1/json/3/`
-
-## 🧪 Testing
-
-### Run All Tests
-```bash
-./gradlew test
-```
-
-### Run Module-Specific Tests
-```bash
-./gradlew :feature:search:test
-./gradlew :data:teams:test
-```
-
-### Test Coverage
-- **ViewModels:** Search, TeamDetail
-- **Repositories:** Teams, Events
-- **Focus:** Critical user paths and business logic
-- **Tools:** MockK for mocking, Turbine for Flow testing
-
-## 📁 Project Structure
-
-```
-SportsApp/
-├── app/
-│   ├── src/main/
-│   │   ├── kotlin/com/sportsapp/
-│   │   │   ├── MainActivity.kt
-│   │   │   ├── SportsApplication.kt
-│   │   │   ├── di/              # Dependency injection
-│   │   │   └── navigation/      # Navigation logic
-│   │   └── res/
-│   │       ├── values/strings.xml
-│   │       └── ...
-│   └── build.gradle.kts
-│
-├── buildSrc/
-│   └── src/main/kotlin/
-│       └── Dependencies.kt      # Centralized dependency management
-│
-├── core/
-│   ├── common/                  # Shared utilities
-│   ├── designsystem/            # UI components & theme
-│   └── network/                 # API configuration
-│
-├── data/
-│   ├── teams/                   # Teams data layer
-│   └── events/                  # Events data layer
-│
-├── feature/
-│   ├── search/                  # Search screen
-│   └── teamdetail/              # Team details screen
-│
-├── gradle/
-├── build.gradle.kts
-├── settings.gradle.kts
-└── README.md
-```
-
-## 🎨 Key Features Implementation
+### Module Overview
+- `app`
+    - Entry point, navigation host, app-level wiring
+- `core:common`
+    - Shared utilities, result wrappers, error models
+- `core:network`
+    - Retrofit setup, interceptors, API call helpers
+- `core:designsystem`
+    - Reusable Compose UI components/theme
+- `domain:leagues`, `domain:teams`
+    - Domain models + use cases
+- `data:leagues`, `data:teams`
+    - Repository implementations, remote data sources, mappers
+    - `data:teams` includes Room database for favorites
+- `feature:leagues`
+    - Leagues UI + ViewModel
+- `feature:search`
+    - Search UI + ViewModel
+- `feature:teamdetail`
+    - Team detail UI + ViewModel
+- `feature:favorites`
+    - Favorites UI + ViewModel
 
 ### State Management
-- **StateFlow** for UI state
-- **Resource** sealed class for loading/success/error states
-- Unidirectional data flow (MVI pattern)
+- Each screen has a ViewModel exposing a `StateFlow` UI state
+- UI renders based on state:
+    - Loading
+    - Error (with message + retry when applicable)
+    - Empty state
+    - Content
 
-### Error Handling
-- Network error detection
-- User-friendly error messages
-- Retry mechanisms
-- Empty state handling
+## Error Handling
+- Network calls go through a safe API wrapper
+- Errors are mapped to user-friendly messages (timeouts, connectivity issues, HTTP codes like 429, etc.)
+- UI displays meaningful error states with retry where appropriate
 
-### UI/UX
-- Material 3 design system
-- Loading indicators
-- Empty states with helpful messages
-- Smooth animations
-- Responsive layouts
+## Build Configuration
+- Debug and Release build types are configured
+- Release builds enable:
+    - R8 / Proguard minification
+    - Resource shrinking
 
-## 📦 Build Variants
+## Running the App
+### Requirements
+- Android Studio (latest stable recommended)
+- JDK 17
 
-### Debug
-- Development build
-- Logging enabled
-- No code obfuscation
+### Steps
+1. Open the project in Android Studio
+2. Let Gradle sync
+3. Run the `app` configuration on an emulator/device
 
-### Release
-- Production build
-- ProGuard/R8 optimization enabled
-- Code shrinking and obfuscation
-- Optimized for performance
+> Note: Ensure the repository includes Gradle wrapper files:
+> - `gradle/wrapper/gradle-wrapper.jar`
+> - `gradle/wrapper/gradle-wrapper.properties`
 
-## 🔧 Configuration
+## Testing
+Unit tests are included for:
+- ViewModels (leagues/search/teamdetail)
+- Repository (teams)
 
-### Dependencies
-All dependencies are centralized in `buildSrc/src/main/kotlin/Dependencies.kt`:
-- Easy version management
-- Consistent across modules
-- Type-safe accessors
+Run:
+- From Android Studio: right click a test package → Run tests
+- Or from terminal:
+    - `./gradlew test`
 
-### Build Configuration
-```kotlin
-android {
-    compileSdk = 34
-    minSdk = 24
-    targetSdk = 34
-    
-    buildFeatures {
-        compose = true
-    }
-}
-```
+## AI Usage (as required by assessment policy)
+AI tools were used to accelerate implementation, review architecture, and fix common Compose/Flow/Hilt edge cases.
+All generated or suggested code was validated by:
+- compiling/linting (where possible)
+- ensuring dependency direction remained correct
+- verifying state behavior and navigation flows
+- confirming API endpoint usage matched TheSportsDB free tier constraints
 
-## 📝 Code Quality
+### Examples of how AI was used
+1. **Architecture guidance**
+    - Prompts like:
+        - “Propose a modular MVVM structure for leagues/teams/team detail with clean dependency direction.”
+        - “Suggest a state model for Compose screens including loading/error/empty/content.”
 
-### Kotlin Conventions
-- Immutability preferred
-- Extension functions for utility code
-- Sealed classes for state modeling
-- Coroutines for asynchronous operations
+2. **Error handling & networking**
+    - Prompts like:
+        - “Design a `safeApiCall` wrapper and error mapper for Retrofit calls including timeouts and HTTP 429.”
 
-### Architecture Principles
-- Single Responsibility Principle
-- Dependency Inversion
-- Separation of Concerns
-- Testability
+3. **Room favorites + flows**
+    - Prompts like:
+        - “How do I expose favorites as Flow from Room and integrate with ViewModel state?”
 
-### Code Organization
-- Package by feature
-- Clear module boundaries
-- Consistent naming conventions
-- Comprehensive documentation
+4. **Unit testing patterns**
+    - Prompts like:
+        - “Write a coroutine-based ViewModel unit test using a MainDispatcherRule and fake repositories.”
 
-## 🤖 AI Usage
-
-This project was developed with AI assistance (Claude). See `AI_USAGE.md` for:
-- How AI was used
-- Key prompts and conversations
-- Understanding of generated code
-- Modifications made to AI suggestions
-
-## 📄 License
-
-This project is created for assessment purposes.
-
-## 👤 Author
-
-[Your Name]
-[Your Email]
-[LinkedIn/GitHub]
-
----
-
-## 📚 Additional Documentation
-
-- [Architecture Decision Records](docs/adr/) (if applicable)
-- [API Documentation](docs/api.md) (if applicable)
-- [Contributing Guidelines](CONTRIBUTING.md) (if applicable)
-
-## 🐛 Known Issues
-
-None at this time.
-
-## 🚧 Future Improvements
-
-- Offline caching with Room database
-- Pagination for large team lists
-- Advanced search filters
-- Favorite teams
-- Dark mode enhancements
-
----
-
-**Built with ❤️ using Jetpack Compose**
+## Notes / Potential Improvements
+- Increase test coverage (favorites, leagues repo, mapper/error mapper tests)
+- Consider keeping domain modules pure Kotlin (avoid UI/navigation DI deps)
+- Add more UI polish/accessibility checks if time permits
+- Move Hardcoded strings away from the UI into Strings.xml

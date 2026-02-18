@@ -22,7 +22,6 @@ class FavoritesViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun onUnfollowToggle(teamId: String) {
-        // In Favorites, toggle means "remove from favorites"
         viewModelScope.launch {
             unfollowTeamUseCase(teamId)
         }
