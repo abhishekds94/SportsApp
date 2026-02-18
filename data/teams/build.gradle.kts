@@ -35,8 +35,10 @@ dependencies {
     implementation(Dependencies.hiltAndroid)
     ksp(Dependencies.hiltCompiler)
 
+    // Testing
     testImplementation(Dependencies.junit)
-    testImplementation(Dependencies.truth)
     testImplementation(Dependencies.mockk)
     testImplementation(Dependencies.coroutinesTest)
+    testImplementation(Dependencies.turbine)
+    testImplementation(Dependencies.kotlinTest)
 }

@@ -2,7 +2,6 @@ package com.sportsapp.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sportsapp.core.common.error.ErrorMapper
 import com.sportsapp.core.common.extensions.isValidSearchQuery
 import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.core.common.ui.LoadState

@@ -60,5 +60,10 @@ dependencies {
     // Coil for images
     implementation(Dependencies.coil)
 
+    // Testing
     testImplementation(Dependencies.junit)
+    testImplementation(Dependencies.mockk)
+    testImplementation(Dependencies.coroutinesTest)
+    testImplementation(Dependencies.turbine)
+    testImplementation(Dependencies.kotlinTest)
 }

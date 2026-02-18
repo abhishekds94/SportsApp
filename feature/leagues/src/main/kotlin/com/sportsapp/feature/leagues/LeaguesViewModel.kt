@@ -2,12 +2,11 @@ package com.sportsapp.feature.leagues
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sportsapp.core.common.error.ErrorMapper
-import com.sportsapp.core.common.util.Constants
 import com.sportsapp.core.common.result.DomainResult
-import com.sportsapp.core.common.util.PagingController
-import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.core.common.ui.LoadState
+import com.sportsapp.core.common.ui.toLoadState
+import com.sportsapp.core.common.util.Constants
+import com.sportsapp.core.common.util.PagingController
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamsByLeagueUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel

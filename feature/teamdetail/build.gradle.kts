@@ -57,5 +57,10 @@ dependencies {
     ksp(Dependencies.hiltCompiler)
     implementation(Dependencies.hiltNavigationCompose)
 
+    // Testing
     testImplementation(Dependencies.junit)
+    testImplementation(Dependencies.mockk)
+    testImplementation(Dependencies.coroutinesTest)
+    testImplementation(Dependencies.turbine)
+    testImplementation(Dependencies.kotlinTest)
 }
