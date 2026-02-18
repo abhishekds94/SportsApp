@@ -164,4 +164,4 @@ The generated designs were used as visual references, and all production code wa
 
 ### UI design using Stitch with Google
 
-    <img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/UI%20design%20using%20AI.png">
+<img src="https://github.com/abhishekds94/SportsApp/blob/master/screenshots/UI%20design%20using%20AI.png">
