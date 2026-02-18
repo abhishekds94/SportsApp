@@ -1,6 +1,7 @@
 plugins {
     id(Plugins.androidLibrary)
     id(Plugins.kotlinAndroid)
+    id(Plugins.kotlinSerialization)
 }
 
 android {
@@ -23,6 +24,9 @@ android {
 }
 
 dependencies {
+    implementation(Dependencies.retrofitKotlinxSerialization)
+    implementation(Dependencies.kotlinxSerializationJson)
+
     implementation(Dependencies.coreKtx)
     implementation(Dependencies.coroutinesCore)
 

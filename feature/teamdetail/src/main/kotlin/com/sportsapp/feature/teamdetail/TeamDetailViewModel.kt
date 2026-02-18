@@ -7,8 +7,8 @@ import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.core.common.ui.LoadState
 import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.domain.teams.model.Team
-import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
 import com.sportsapp.domain.teams.usecase.FollowTeamUseCase
+import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
 import com.sportsapp.domain.teams.usecase.ObserveIsTeamFollowedUseCase
 import com.sportsapp.domain.teams.usecase.UnfollowTeamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,10 +49,7 @@ class TeamDetailViewModel @Inject constructor(
         loadJob = viewModelScope.launch {
             _uiState.update {
                 it.copy(
-                    isLoadingTeam = true,
-                    errorTitle = null,
-                    errorMessage = null,
-                    errorAction = null
+                    isLoadingTeam = true, errorTitle = null, errorMessage = null, errorAction = null
                 )
             }
 
@@ -110,8 +107,6 @@ class TeamDetailViewModel @Inject constructor(
                     }
                 }
             }
-
-
         }
     }
 

@@ -1,22 +1,20 @@
 package com.sportsapp.data.teams.repository
 
+import com.sportsapp.core.common.result.DomainResult
+import com.sportsapp.core.common.result.safeApiCall
+import com.sportsapp.data.teams.local.FavoriteTeamsDao
 import com.sportsapp.data.teams.mapper.toDomain
 import com.sportsapp.data.teams.mapper.toDomainList
 import com.sportsapp.data.teams.mapper.toFavoriteEntity
-import com.sportsapp.data.teams.mapper.toDomain as toDomainFromEntity
-import com.sportsapp.data.teams.local.FavoriteTeamsDao
 import com.sportsapp.data.teams.source.remote.TeamRemoteDataSource
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.repository.TeamsRepository
-import com.sportsapp.core.common.result.DomainResult
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.SerializationException
-import retrofit2.HttpException
-import java.io.IOException
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import com.sportsapp.data.teams.mapper.toDomain as toDomainFromEntity
 
 class TeamRepositoryImpl @Inject constructor(
     private val remoteDataSource: TeamRemoteDataSource,
@@ -24,26 +22,19 @@ class TeamRepositoryImpl @Inject constructor(
 ) : TeamsRepository {
 
     override fun searchTeamsByLeague(leagueName: String): Flow<DomainResult<List<Team>>> = flow {
-        try {
-            val teams = remoteDataSource.searchTeamsByLeague(leagueName).toDomainList()
-            emit(DomainResult.Success(teams))
-        } catch (e: IOException) {
-            emit(DomainResult.Error(e))
-        } catch (e: HttpException) {
-            emit(DomainResult.Error(e))
-        } catch (e: SerializationException) {
-            emit(DomainResult.Error(e))
-        }
+        emit(
+            safeApiCall {
+                remoteDataSource.searchTeamsByLeague(leagueName).toDomainList()
+            }
+        )
     }
 
-
     override fun searchTeams(query: String): Flow<DomainResult<List<Team>>> = flow {
-        try {
-            val teams = remoteDataSource.searchTeams(query).toDomainList()
-            emit(DomainResult.Success(teams))
-        } catch (t: Throwable) {
-            emit(DomainResult.Error(t))
-        }
+        emit(
+            safeApiCall {
+                remoteDataSource.searchTeams(query).toDomainList()
+            }
+        )
     }
 
     override fun getTeamByName(teamName: String): Flow<DomainResult<Team?>> = flow {
@@ -52,15 +43,22 @@ class TeamRepositoryImpl @Inject constructor(
             emit(DomainResult.Success(cached.toDomainFromEntity()))
         }
 
-        try {
-            val remote = remoteDataSource.getTeamByName(teamName)?.toDomain()
-            emit(DomainResult.Success(remote))
+        val remoteResult = safeApiCall {
+            remoteDataSource.getTeamByName(teamName)?.toDomain()
+        }
 
-            if (remote != null && favoritesDao.isFollowedOnce(remote.id)) {
-                favoritesDao.upsert(remote.toFavoriteEntity())
+        when (remoteResult) {
+            is DomainResult.Success -> {
+                val remote = remoteResult.data
+                emit(DomainResult.Success(remote))
+
+                if (remote != null && favoritesDao.isFollowedOnce(remote.id)) {
+                    favoritesDao.upsert(remote.toFavoriteEntity())
+                }
             }
-        } catch (t: Throwable) {
-            if (cached == null) emit(DomainResult.Error(t))
+            is DomainResult.Error -> {
+                if (cached == null) emit(remoteResult)
+            }
         }
     }
 
