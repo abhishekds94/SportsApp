@@ -63,7 +63,7 @@ fun TeamDetailScreen(
         uiState = uiState,
         onBackClick = onBackClick,
         onRetry = viewModel::retry,
-        onFollowToggleClick = viewModel::onFollowToggleClick
+        onFollowToggleClick = viewModel::onFollowClicked
     )
 }
 

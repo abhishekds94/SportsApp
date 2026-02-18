@@ -44,17 +44,6 @@ class TeamDetailViewModel @Inject constructor(
 
     fun retry() = load()
 
-    fun onFollowClick() {
-        val team = _uiState.value.team ?: return
-        if (_uiState.value.isFollowing || _uiState.value.isFollowActionInProgress) return
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isFollowActionInProgress = true) }
-            runCatching { followTeamUseCase(team) }
-            _uiState.update { it.copy(isFollowActionInProgress = false) }
-        }
-    }
-
     private fun load() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -135,22 +124,15 @@ class TeamDetailViewModel @Inject constructor(
         }
     }
 
-
-    fun onFollowToggleClick() {
+    fun onFollowClicked() {
         val current = uiState.value
         val team = current.team ?: return
-
         if (current.isFollowActionInProgress) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isFollowActionInProgress = true) }
-
             try {
-                if (current.isFollowing) {
-                    unfollowTeamUseCase(team.id)
-                } else {
-                    followTeamUseCase(team)
-                }
+                if (current.isFollowing) unfollowTeamUseCase(team.id) else followTeamUseCase(team)
             } finally {
                 _uiState.update { it.copy(isFollowActionInProgress = false) }
             }

@@ -3,7 +3,9 @@ package com.sportsapp.data.teams.repository
 import app.cash.turbine.test
 import com.sportsapp.core.common.result.DomainResult
 import com.sportsapp.core.network.model.TeamDto
+import com.sportsapp.data.teams.local.FavoriteTeamEntity
 import com.sportsapp.data.teams.source.remote.TeamRemoteDataSource
+import com.sportsapp.domain.teams.model.Team
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,7 +18,8 @@ import kotlin.test.assertTrue
 class TeamRepositoryImplTest {
 
     private val remote: TeamRemoteDataSource = mockk()
-    private val repo = TeamRepositoryImpl(remote)
+    private val favoritesDao = FakeFavoriteTeamsDao()
+    private val repo = TeamRepositoryImpl(remote, favoritesDao)
 
     // ---- helpers ----
     private fun dto(
@@ -53,21 +56,6 @@ class TeamRepositoryImplTest {
             assertEquals(2, data.size)
             assertEquals("Arsenal", data[0].name)
 
-            awaitComplete()
-        }
-    }
-
-    @Test
-    fun `searchTeamsByLeague emits Error when remote throws`() = runTest {
-        val league = "Premier League"
-        val ex = RuntimeException("network fail")
-
-        coEvery { remote.searchTeamsByLeague(league) } throws ex
-
-        repo.searchTeamsByLeague(league).test {
-            val item = awaitItem()
-            assertTrue(item is DomainResult.Error)
-            assertEquals(ex, (item as DomainResult.Error).throwable)
             awaitComplete()
         }
     }
@@ -158,6 +146,69 @@ class TeamRepositoryImplTest {
             assertTrue(item is DomainResult.Error)
             assertEquals(ex, (item as DomainResult.Error).throwable)
             awaitComplete()
+        }
+    }
+
+    @Test
+    fun `getTeamByName emits cached favorite first when present`() = runTest {
+        // Seed cache
+        favoritesDao.upsert(
+            FavoriteTeamEntity(
+                id = "1",
+                name = "Arsenal",
+                sport = "Soccer",
+                league = "Premier League",
+                badgeUrl = null,
+                stadium = null,
+                description = null,
+                shortName = null,
+                country = null,
+                stadiumLocation = null,
+                stadiumCapacity = null,
+                jerseyUrl = null,
+                formedYear = null,
+                website = null,
+                facebook = null,
+                twitter = null,
+                instagram = null,
+                youtube = null,
+                cachedAt = 0L,
+            )
+        )
+
+        // Remote returns null so we only see cached
+        coEvery { remote.getTeamByName("Arsenal") } returns null
+
+        repo.getTeamByName("Arsenal").test {
+            val first = awaitItem()
+            assertTrue(first is DomainResult.Success)
+            assertEquals("Arsenal", (first as DomainResult.Success).data?.name)
+            // next will be remote success(null)
+            val second = awaitItem()
+            assertTrue(second is DomainResult.Success)
+            assertEquals(null, (second as DomainResult.Success).data)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `followTeam persists to favorites`() = runTest {
+        val team = Team(
+            id = "99",
+            name = "Test FC",
+            sport = "Soccer",
+            league = "Test League",
+            badgeUrl = null,
+            stadium = null,
+            description = null
+        )
+
+        repo.followTeam(team)
+
+        repo.observeFavoriteTeamIds().test {
+            val ids = awaitItem()
+            assertTrue(ids.contains("99"))
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

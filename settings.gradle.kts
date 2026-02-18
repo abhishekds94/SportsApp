@@ -36,4 +36,3 @@ include(":feature:favorites")
 
 // App module
 include(":app")
-include(":data:leagues")
