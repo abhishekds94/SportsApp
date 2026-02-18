@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Sports
 import androidx.compose.material.icons.outlined.SportsBaseball
 import androidx.compose.material.icons.outlined.SportsBasketball
 import androidx.compose.material.icons.outlined.SportsCricket
@@ -266,7 +267,7 @@ private fun SportPill(
                     "Baseball" -> Icons.Outlined.SportsBaseball
                     "Cricket" -> Icons.Outlined.SportsCricket
                     else -> {
-                        throw IllegalArgumentException("Invalid sport: $label")
+                        Icons.Outlined.Sports
                     }
                 },
                 contentDescription = null,
@@ -280,32 +281,6 @@ private fun SportPill(
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-@Composable
-private fun ZeroState(selectedSport: String? = null, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = if (selectedSport != null) "Select a League" else "Select a Sport",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = if (selectedSport != null)
-                "Choose a league from the dropdown above to view teams"
-            else
-                "Choose a sport from the chips above to view leagues and teams",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
