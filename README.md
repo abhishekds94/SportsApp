@@ -125,8 +125,18 @@ All generated or suggested code was validated by:
     - Prompts like:
         - “Write a coroutine-based ViewModel unit test using a MainDispatcherRule and fake repositories.”
 
+### UI Prototyping using Google Stitch
+
+I used Google Stitch (https://stitch.withgoogle.com/) to generate UI concepts and layouts using natural language prompts.
+
+This helped accelerate UI ideation and validate layout hierarchy, loading states, and content presentation.
+
+The generated designs were used as visual references, and all production code was implemented manually using Jetpack Compose, following MVVM and Clean Architecture principles.
+
 ## Notes / Potential Improvements
 - Increase test coverage (favorites, leagues repo, mapper/error mapper tests)
 - Consider keeping domain modules pure Kotlin (avoid UI/navigation DI deps)
 - Add more UI polish/accessibility checks if time permits
 - Move Hardcoded strings away from the UI into Strings.xml
+
+### Screenshots
