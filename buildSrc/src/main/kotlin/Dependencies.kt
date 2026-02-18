@@ -106,6 +106,7 @@ object Dependencies {
     const val truth = "com.google.truth:truth:${Versions.truth}"
     const val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.coroutinesTest}"
     const val kotlinTest = "org.jetbrains.kotlin:kotlin-test:${Versions.kotlinTest}"
+    const val javaxInject = "javax.inject:javax.inject:1"
 }
 
 object Plugins {

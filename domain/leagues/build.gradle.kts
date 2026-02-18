@@ -1,8 +1,6 @@
 plugins {
     id(Plugins.androidLibrary)
     id(Plugins.kotlinAndroid)
-    id(Plugins.hilt)
-    id(Plugins.ksp)
 }
 
 android {
@@ -25,12 +23,6 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
-
     implementation(Dependencies.coroutinesCore)
-    implementation(Dependencies.coreKtx)
-    implementation(Dependencies.lifecycleRuntimeKtx)
-
-    implementation(Dependencies.hiltAndroid)
-    ksp(Dependencies.hiltCompiler)
-    implementation(Dependencies.hiltNavigationCompose)
+    implementation(Dependencies.javaxInject)
 }
