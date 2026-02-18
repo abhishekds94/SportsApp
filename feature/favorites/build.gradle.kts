@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sportsapp.feature.teamdetail"
+    namespace = "com.sportsapp.feature.favorites"
     compileSdk = Versions.compileSdk
 
     defaultConfig {

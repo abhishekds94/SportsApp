@@ -2,6 +2,7 @@ package com.sportsapp.feature.search
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,10 +37,12 @@ fun SearchScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val favoriteIds by viewModel.favoriteIds.collectAsStateWithLifecycle()
 
     SearchContent(
         uiState = uiState,
         searchQuery = searchQuery,
+        favoriteIds = favoriteIds,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onTeamClick = onTeamClick
     )
@@ -49,13 +52,14 @@ fun SearchScreen(
 private fun SearchContent(
     uiState: SearchUiState,
     searchQuery: String,
+    favoriteIds: Set<String>,
     onSearchQueryChange: (String) -> Unit,
     onTeamClick: (String, String) -> Unit
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -87,7 +91,7 @@ private fun SearchContent(
                 }
 
                 is SearchUiState.Success -> {
-                    SearchResults(uiState.teams, onTeamClick)
+                    SearchResults(uiState.teams, favoriteIds, onTeamClick)
                 }
 
                 is SearchUiState.ZeroState -> {
@@ -119,6 +123,7 @@ private fun SearchContent(
 @Composable
 private fun SearchResults(
     teams: List<Team>,
+    favoriteIds: Set<String>,
     onTeamClick: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -130,6 +135,7 @@ private fun SearchResults(
         items(teams, key = { it.id }) { team ->
             TeamResultItem(
                 team = team,
+                isFollowing = favoriteIds.contains(team.id),
                 onClick = { onTeamClick(team.id, team.name) }
             )
         }
@@ -143,6 +149,7 @@ private fun SearchScreenPreview() {
         SearchContent(
             uiState = SearchUiState.Idle,
             searchQuery = "",
+            favoriteIds = emptySet(),
             onSearchQueryChange = {},
             onTeamClick = { _, _ -> }
         )

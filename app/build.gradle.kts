@@ -66,6 +66,7 @@ dependencies {
     implementation(project(":feature:leagues"))
     implementation(project(":feature:search"))
     implementation(project(":feature:teamdetail"))
+    implementation(project(":feature:favorites"))
 
     // Android Core
     implementation(Dependencies.coreKtx)
@@ -86,6 +87,7 @@ dependencies {
 
     // Hilt
     implementation(Dependencies.hiltAndroid)
+    implementation(Dependencies.lifecycleRuntimeCompose)
     ksp(Dependencies.hiltCompiler)
     implementation(Dependencies.hiltNavigationCompose)
 

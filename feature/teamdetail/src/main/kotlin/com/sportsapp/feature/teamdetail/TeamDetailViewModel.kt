@@ -8,6 +8,9 @@ import com.sportsapp.core.common.ui.LoadState
 import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.domain.teams.model.Team
 import com.sportsapp.domain.teams.usecase.GetTeamByNameUseCase
+import com.sportsapp.domain.teams.usecase.FollowTeamUseCase
+import com.sportsapp.domain.teams.usecase.ObserveIsTeamFollowedUseCase
+import com.sportsapp.domain.teams.usecase.UnfollowTeamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +24,9 @@ import javax.inject.Inject
 @HiltViewModel
 class TeamDetailViewModel @Inject constructor(
     private val getTeamByNameUseCase: GetTeamByNameUseCase,
+    private val followTeamUseCase: FollowTeamUseCase,
+    private val observeIsTeamFollowedUseCase: ObserveIsTeamFollowedUseCase,
+    private val unfollowTeamUseCase: UnfollowTeamUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -30,12 +36,24 @@ class TeamDetailViewModel @Inject constructor(
     val uiState: StateFlow<TeamDetailUiState> = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
+    private var followStateJob: Job? = null
 
     init {
         load()
     }
 
     fun retry() = load()
+
+    fun onFollowClick() {
+        val team = _uiState.value.team ?: return
+        if (_uiState.value.isFollowing || _uiState.value.isFollowActionInProgress) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isFollowActionInProgress = true) }
+            runCatching { followTeamUseCase(team) }
+            _uiState.update { it.copy(isFollowActionInProgress = false) }
+        }
+    }
 
     private fun load() {
         loadJob?.cancel()
@@ -72,6 +90,8 @@ class TeamDetailViewModel @Inject constructor(
                                 errorAction = null
                             )
                         }
+
+                        state.data?.let { observeFollowState(it.id) }
                     }
 
                     is LoadState.Empty -> {
@@ -79,6 +99,7 @@ class TeamDetailViewModel @Inject constructor(
                             it.copy(
                                 team = null,
                                 isLoadingTeam = false,
+                                isFollowing = false,
                                 errorTitle = state.ui.title,
                                 errorMessage = state.ui.message,
                                 errorAction = null
@@ -91,6 +112,7 @@ class TeamDetailViewModel @Inject constructor(
                             it.copy(
                                 team = null,
                                 isLoadingTeam = false,
+                                isFollowing = false,
                                 errorTitle = state.ui.title,
                                 errorMessage = state.ui.message,
                                 errorAction = state.ui.action
@@ -101,6 +123,37 @@ class TeamDetailViewModel @Inject constructor(
             }
 
 
+        }
+    }
+
+    private fun observeFollowState(teamId: String) {
+        followStateJob?.cancel()
+        followStateJob = viewModelScope.launch {
+            observeIsTeamFollowedUseCase(teamId).collectLatest { followed ->
+                _uiState.update { it.copy(isFollowing = followed) }
+            }
+        }
+    }
+
+
+    fun onFollowToggleClick() {
+        val current = uiState.value
+        val team = current.team ?: return
+
+        if (current.isFollowActionInProgress) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isFollowActionInProgress = true) }
+
+            try {
+                if (current.isFollowing) {
+                    unfollowTeamUseCase(team.id)
+                } else {
+                    followTeamUseCase(team)
+                }
+            } finally {
+                _uiState.update { it.copy(isFollowActionInProgress = false) }
+            }
         }
     }
 }

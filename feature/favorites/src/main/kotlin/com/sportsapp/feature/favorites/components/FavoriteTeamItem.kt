@@ -1,4 +1,4 @@
-package com.sportsapp.feature.search.components
+package com.sportsapp.feature.favorites.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -6,29 +6,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sportsapp.core.designsystem.component.TeamBadge
-import com.sportsapp.core.designsystem.theme.SportsAppTheme
 import com.sportsapp.domain.teams.model.Team
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeamResultItem(
+fun FavoriteTeamItem(
     team: Team,
-    isFollowing: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -84,45 +84,12 @@ fun TeamResultItem(
                 }
             }
 
-            if (isFollowing) {
-                Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                ) {
-                    Text(
-                        text = "FOLLOWING",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
-                }
-            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun TeamResultItemPreview() {
-    SportsAppTheme {
-        TeamResultItem(
-            team = Team(
-                id = "1",
-                name = "Manchester United",
-                shortName = "MUN",
-                sport = "Soccer",
-                league = "Premier League",
-                country = "England",
-                stadium = null,
-                stadiumLocation = null,
-                stadiumCapacity = null,
-                badgeUrl = null,
-                description = null,
-                formedYear = null
-            ),
-            isFollowing = true,
-            onClick = {},
-            modifier = Modifier.padding(16.dp)
-        )
     }
 }

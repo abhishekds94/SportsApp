@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Scoreboard
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -41,6 +42,11 @@ val bottomNavItems = listOf(
         route = NavigationDestinations.Search.route,
         icon = Icons.Default.Search,
         label = "Search"
+    ),
+    BottomNavItem(
+        route = NavigationDestinations.Favorites.route,
+        icon = Icons.Default.Favorite,
+        label = "Favorites"
     )
 )
 

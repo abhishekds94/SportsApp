@@ -14,8 +14,11 @@ data class TeamDetailUiState(
 
     val errorMessage: String? = null,
 
-    val errorAction: String? = null
+    val errorAction: String? = null,
 
+    val isFollowing: Boolean = false,
+
+    val isFollowActionInProgress: Boolean = false,
 ) {
 
     val isLoading: Boolean

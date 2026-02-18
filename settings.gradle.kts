@@ -32,6 +32,7 @@ include(":domain:leagues")
 include(":feature:leagues")
 include(":feature:search")
 include(":feature:teamdetail")
+include(":feature:favorites")
 
 // App module
 include(":app")

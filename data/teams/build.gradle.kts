@@ -38,6 +38,11 @@ dependencies {
     implementation(Dependencies.hiltAndroid)
     ksp(Dependencies.hiltCompiler)
 
+    // Room (offline cache)
+    implementation(Dependencies.roomRuntime)
+    implementation(Dependencies.roomKtx)
+    ksp(Dependencies.roomCompiler)
+
     // Testing
     testImplementation(Dependencies.junit)
     testImplementation(Dependencies.mockk)

@@ -46,7 +46,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sportsapp.core.designsystem.component.ErrorState
 import com.sportsapp.core.designsystem.component.LoadingIndicator
 import com.sportsapp.core.designsystem.component.TeamBadge
@@ -63,7 +62,8 @@ fun TeamDetailScreen(
     TeamDetailContent(
         uiState = uiState,
         onBackClick = onBackClick,
-        onRetry = viewModel::retry
+        onRetry = viewModel::retry,
+        onFollowToggleClick = viewModel::onFollowToggleClick
     )
 }
 
@@ -72,7 +72,8 @@ fun TeamDetailScreen(
 private fun TeamDetailContent(
     uiState: TeamDetailUiState,
     onBackClick: () -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onFollowToggleClick: () -> Unit
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -104,13 +105,20 @@ private fun TeamDetailContent(
         ) {
             when {
                 uiState.isLoading -> LoadingIndicator()
+
                 uiState.errorMessage != null -> ErrorState(
                     title = uiState.errorTitle ?: "Failed to load data",
                     message = uiState.errorMessage,
                     actionText = uiState.errorAction ?: "Retry",
                     onRetry = { onRetry() }
                 )
-                uiState.team != null -> TeamDetailBody(team = uiState.team)
+
+                uiState.team != null -> TeamDetailBody(
+                    team = uiState.team,
+                    isFollowing = uiState.isFollowing,
+                    isFollowActionInProgress = uiState.isFollowActionInProgress,
+                    onFollowToggleClick = onFollowToggleClick
+                )
             }
         }
     }
@@ -119,6 +127,9 @@ private fun TeamDetailContent(
 @Composable
 private fun TeamDetailBody(
     team: Team,
+    isFollowing: Boolean,
+    isFollowActionInProgress: Boolean,
+    onFollowToggleClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -161,8 +172,9 @@ private fun TeamDetailBody(
             Spacer(modifier = Modifier.height(22.dp))
 
             FollowPillButton(
-                text = "+ Follow",
-                onClick = { /* UI-only for now */ }
+                text = if (isFollowing) "Following" else "Follow",
+                enabled = !isFollowActionInProgress,
+                onClick = onFollowToggleClick
             )
 
             Spacer(modifier = Modifier.height(34.dp))
@@ -218,11 +230,13 @@ private fun LogoSquare(team: Team, modifier: Modifier = Modifier) {
 @Composable
 private fun FollowPillButton(
     text: String,
+    enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .wrapContentHeight()
             .width(260.dp)
@@ -364,6 +378,9 @@ private fun TeamDetailPixelClosePreview() {
                 description = "Liverpool Football Club is a professional football club...\r\n\r\nMore text here.",
                 formedYear = "1892"
             ),
+            isFollowing = true,
+            isFollowActionInProgress = false,
+            onFollowToggleClick = {}
         )
     }
 }

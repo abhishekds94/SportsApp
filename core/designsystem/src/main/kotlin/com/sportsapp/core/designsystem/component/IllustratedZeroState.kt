@@ -120,3 +120,13 @@ fun SearchIntroZeroState(modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
+
+@Composable
+fun FavoritesEmptyZeroState(modifier: Modifier = Modifier) {
+    IllustratedZeroState(
+        illustrationRes = R.drawable.zs_favs,
+        title = "Your Favorites are Empty",
+        subtitle = "Follow teams to access their details even when you’re offline. Your favorite teams will be cached here for quick access.",
+        modifier = modifier
+    )
+}

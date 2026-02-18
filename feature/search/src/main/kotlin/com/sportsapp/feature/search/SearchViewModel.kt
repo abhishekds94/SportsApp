@@ -8,7 +8,9 @@ import com.sportsapp.core.common.ui.LoadState
 import com.sportsapp.core.common.ui.toLoadState
 import com.sportsapp.core.common.util.Constants
 import com.sportsapp.domain.teams.model.Team
+import com.sportsapp.domain.teams.usecase.ObserveFavoriteTeamIdsUseCase
 import com.sportsapp.domain.teams.usecase.SearchTeamsUseCase
+import com.sportsapp.domain.teams.usecase.UnfollowTeamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,12 +22,16 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val searchTeamsUseCase: SearchTeamsUseCase
+    private val searchTeamsUseCase: SearchTeamsUseCase,
+    observeFavoriteTeamIdsUseCase: ObserveFavoriteTeamIdsUseCase,
+    private val unfollowTeamUseCase: UnfollowTeamUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
@@ -34,6 +40,14 @@ class SearchViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    val favoriteIds: StateFlow<Set<String>> =
+        observeFavoriteTeamIdsUseCase()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptySet()
+            )
+
     init {
         observeSearchQuery()
     }
@@ -41,7 +55,6 @@ class SearchViewModel @Inject constructor(
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
 
-        // Immediate UI feedback
         if (query.isBlank()) {
             _uiState.value = SearchUiState.Idle
             return
@@ -55,6 +68,10 @@ class SearchViewModel @Inject constructor(
                 throwable = null
             )
         }
+    }
+
+    fun onUnfollowFromSearch(teamId: String) {
+        viewModelScope.launch { unfollowTeamUseCase(teamId) }
     }
 
     @OptIn(FlowPreview::class)
@@ -78,7 +95,6 @@ class SearchViewModel @Inject constructor(
                         )
 
                         else -> {
-                            // ✅ Single pipeline; previous search is cancelled on new query
                             searchTeamsUseCase(query)
                                 .map { result: DomainResult<List<Team>> ->
                                     val state: LoadState<List<Team>> = result.toLoadState(

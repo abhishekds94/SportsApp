@@ -1,8 +1,11 @@
 package com.sportsapp.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresExtension
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -10,8 +13,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sportsapp.feature.leagues.LeaguesScreen
 import com.sportsapp.feature.search.SearchScreen
+import com.sportsapp.feature.favorites.FavoritesScreen
+import com.sportsapp.feature.favorites.FavoritesViewModel
 import com.sportsapp.feature.teamdetail.TeamDetailScreen
 
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun SportsNavHost(
     navController: NavHostController,
@@ -43,6 +49,19 @@ fun SportsNavHost(
             )
         }
 
+        composable(NavigationDestinations.Favorites.route) { backStackEntry ->
+            val favoritesViewModel: FavoritesViewModel = hiltViewModel(backStackEntry)
+
+            FavoritesScreen(
+                viewModel = favoritesViewModel,
+                onTeamClick = { teamId, teamName ->
+                    navController.navigate(
+                        NavigationDestinations.TeamDetail.createRoute(teamId, teamName)
+                    )
+                }
+            )
+        }
+
         composable(
             route = NavigationDestinations.TeamDetail.route,
             arguments = listOf(
@@ -50,15 +69,14 @@ fun SportsNavHost(
                 navArgument("teamName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
-            val teamName = backStackEntry.arguments?.getString("teamName") ?: ""
+            val teamName = backStackEntry.arguments?.getString("teamName").orEmpty()
+
 
             key(teamName) {
                 TeamDetailScreen(
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
                 )
             }
         }
-
     }
 }
