@@ -81,7 +81,7 @@ private fun TeamDetailContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = 12.dp, top = 12.dp)
+                    .padding(start = 12.dp, top = 0.dp)
             ) {
                 IconButton(
                     onClick = onBackClick,
@@ -126,7 +126,7 @@ private fun TeamDetailBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 52.dp, bottom = 28.dp)
+                .padding(top = 20.dp, bottom = 28.dp)
                 .padding(horizontal = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
